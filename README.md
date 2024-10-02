@@ -1,2 +1,2 @@
-# MMORPG
- 
+# MMORPG Centralized API and Game Servers
+This repository contains the full implementation of a centralized API server and multiple game servers (Chat Server, Login Server, World Server, and Channel Server) for managing a massive multiplayer online role-playing game (MMORPG). The API server acts as a central hub that connects to all internal game servers and relays admin commands, ensuring that only the API server is exposed to the external world while keeping the game servers secure.
