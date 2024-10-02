@@ -6,17 +6,19 @@ public class ChannelInfo implements Serializable {
     private String name;
     private String address;
     private int port;
-    private int playerCount;
+    private int currentPlayers;
     private int maxPlayers;
+    private transient long lastHeartbeat;
 
     public ChannelInfo() {}
 
-    public ChannelInfo(String name, String address, int port, int playerCount, int maxPlayers) {
+    public ChannelInfo(String name, String address, int port, int currentPlayers, int maxPlayers) {
         this.name = name;
         this.address = address;
         this.port = port;
-        this.playerCount = playerCount;
+        this.currentPlayers = currentPlayers;
         this.maxPlayers = maxPlayers;
+        this.lastHeartbeat = System.currentTimeMillis();
     }
 
     // Getter and Setter methods
@@ -34,7 +36,7 @@ public class ChannelInfo implements Serializable {
     }
 
     public int getPlayerCount() {
-        return playerCount;
+        return currentPlayers;
     }
 
     public int getMaxPlayers() {
@@ -54,10 +56,26 @@ public class ChannelInfo implements Serializable {
     }
 
     public void setPlayerCount(int playerCount) {
-        this.playerCount = playerCount;
+        this.currentPlayers = playerCount;
     }
 
     public void setMaxPlayers(int maxPlayers) {
         this.maxPlayers = maxPlayers;
+    }
+    
+    public long getLastHeartbeat() {
+        return lastHeartbeat;
+    }
+
+    public void setLastHeartbeat(long lastHeartbeat) {
+        this.lastHeartbeat = lastHeartbeat;
+    }
+    
+        public int getCurrentPlayers() {
+        return currentPlayers;
+    }
+
+    public void setCurrentPlayers(int currentPlayers) {
+        this.currentPlayers = currentPlayers;
     }
 }

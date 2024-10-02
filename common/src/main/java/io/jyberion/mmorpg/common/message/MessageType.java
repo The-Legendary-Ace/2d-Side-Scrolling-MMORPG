@@ -3,6 +3,11 @@ package io.jyberion.mmorpg.common.message;
 public enum MessageType {
     LOGIN_REQUEST,
     LOGIN_RESPONSE,
-    CHAT_MESSAGE,
-    // Add other message types as needed
+    CHANNEL_REGISTRATION,
+    GET_AVAILABLE_CHANNELS,
+    AVAILABLE_CHANNELS_RESPONSE,
+    CHANNEL_HEARTBEAT,
+    CHANNEL_AUTHENTICATION,
+    CHANNEL_AUTHENTICATION_RESPONSE,
+    PLAYER_ACTION
 }

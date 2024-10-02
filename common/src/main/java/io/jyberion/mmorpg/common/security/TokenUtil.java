@@ -1,6 +1,8 @@
 package io.jyberion.mmorpg.common.security;
 
 import io.jyberion.mmorpg.common.config.ConfigLoader;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -8,45 +10,31 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 public class TokenUtil {
-    private static final String SECRET_KEY;
+    private static final String SECRET = ConfigLoader.get("jwt.secret");
 
-    static {
-        // Load the secret key from configuration
-        SECRET_KEY = ConfigLoader.get("jwt.secret");
-        if (SECRET_KEY == null || SECRET_KEY.isEmpty()) {
-            throw new IllegalStateException("JWT secret key is not configured");
-        }
-    }
-
-    public static String generateToken(String userId, long expirationMillis) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expirationMillis);
+    public static String generateToken(String username, long expirationMillis) {
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+        Date expiration = new Date(nowMillis + expirationMillis);
 
         return Jwts.builder()
-                   .setSubject(userId)
-                   .setIssuedAt(now)
-                   .setExpiration(expiryDate)
-                   .signWith(SignatureAlgorithm.HS256, SECRET_KEY.getBytes(StandardCharsets.UTF_8))
-                   .compact();
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(expiration)
+                .signWith(SignatureAlgorithm.HS256, SECRET.getBytes(StandardCharsets.UTF_8))
+                .compact();
     }
 
-    public static String getUserIdFromToken(String token) {
-        return Jwts.parser()
-                   .setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8))
-                   .parseClaimsJws(token)
-                   .getBody()
-                   .getSubject();
-    }
-
-    public static boolean validateToken(String token) {
+    public static String validateToken(String token) {
         try {
-            Jwts.parser()
-                .setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8))
-                .parseClaimsJws(token);
-            return true;
-        } catch (Exception e) {
-            // Log the exception if needed
-            return false;
+            Claims claims = Jwts.parser()
+                    .setSigningKey(SECRET.getBytes(StandardCharsets.UTF_8))
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getSubject(); // Extract username
+        } catch (JwtException e) {
+            // Token is invalid
+            return null;
         }
     }
 }

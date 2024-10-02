@@ -33,9 +33,9 @@
         </dependency>
         <!-- Common Module -->
         <dependency>
-            <groupId>io.jyberion.mmorpg</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>common</artifactId>
-            <version>1.0.0</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>
