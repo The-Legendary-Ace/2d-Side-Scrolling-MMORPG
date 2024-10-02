@@ -81,7 +81,7 @@ Backend Engineers: Assist with scaling the server infrastructure and improving p
 If you are interested in contributing to any of these areas, please reach out! We welcome both experienced professionals and those looking to grow their skills through collaboration.
 
 # Contribution
-We welcome contributions to this project! Please check out the file CONTRIBUTING.md for details on how you can help with development, testing, documentation, and more.
+We welcome contributions to this project!
 
 Disclaimer: Contributions to this project may be used in commercial products. By contributing, you acknowledge that your work could be incorporated into projects that may be monetized. If you have concerns, feel free to reach out for clarification.
 
