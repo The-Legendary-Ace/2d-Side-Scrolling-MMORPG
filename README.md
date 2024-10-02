@@ -92,4 +92,4 @@ Wiki: https://github.com/The-Legendary-Ace/2d-Side-Scrolling-MMORPG/wiki
 
 Forum: *Undecided*
 
-Discord: Coming Soon
+Discord: [Discord](https://discord.gg/545U5QXFsm)
