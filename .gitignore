@@ -30,3 +30,5 @@ replay_pid*
 /cash-shop-server/target
 /api-server/target
 /common/target
+*.crt
+*.key
