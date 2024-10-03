@@ -8,7 +8,6 @@ import io.jyberion.mmorpg.login.WorldServerClient;
 import io.jyberion.mmorpg.login.service.UserService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class LoginServerHandler extends SimpleChannelInboundHandler<Message> {
     private static final Logger logger = LoggerFactory.getLogger(LoginServerHandler.class);
-    private final UserService userService = new UserService();
+    private final UserService userService = new UserService(); // Service for handling user authentication
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
@@ -35,35 +34,40 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<Message> {
         });
     }
 
+    // Handle the login request asynchronously
     private void handleLoginRequest(ChannelHandlerContext ctx, LoginRequestMessage request) {
-        try {
-            String username = request.getUsername();
-            String password = request.getPassword();
+        String username = request.getUsername();
+        String password = request.getPassword();
 
-            if (userService.authenticateUser(username, password)) {
+        // Authenticate the user asynchronously
+        CompletableFuture<Boolean> authFuture = userService.authenticateUserAsync(username, password);
+
+        authFuture.thenCompose(authenticated -> {
+            if (authenticated) {
+                // If the user is authenticated, generate JWT token
                 long expiration = Long.parseLong(ConfigLoader.get("jwt.expiration"));
                 String token = TokenUtil.generateToken(username, expiration);
 
+                // Fetch available channels from the world server asynchronously
                 WorldServerClient worldClient = new WorldServerClient();
-                CompletableFuture<List<ChannelInfo>> channelsFuture = worldClient.getAvailableChannels();
-
-                channelsFuture.thenAccept(channels -> {
-                    LoginResponseMessage response = new LoginResponseMessage(true, token, "Login successful.", channels);
-                    ctx.writeAndFlush(response);
-                }).exceptionally(ex -> {
-                    logger.error("Failed to retrieve channels from World Server", ex);
-                    LoginResponseMessage response = new LoginResponseMessage(false, null, "Unable to retrieve channels.", null);
-                    ctx.writeAndFlush(response);
-                    return null;
-                });
+                return worldClient.getAvailableChannels()
+                        .thenApply(channels -> new LoginResponseMessage(true, token, "Login successful.", channels));
             } else {
-                LoginResponseMessage response = new LoginResponseMessage(false, null, "Invalid credentials.", null);
-                ctx.writeAndFlush(response);
+                // If authentication fails, send failure response
+                return CompletableFuture.completedFuture(
+                        new LoginResponseMessage(false, null, "Invalid credentials.", null)
+                );
             }
-        } catch (Exception e) {
-            logger.error("Error processing login request", e);
-            ctx.close();
-        }
+        }).thenAccept(response -> {
+            // Send the login response
+            ctx.writeAndFlush(response);
+        }).exceptionally(ex -> {
+            // Handle any errors during authentication or channel retrieval
+            logger.error("Error during login process", ex);
+            LoginResponseMessage response = new LoginResponseMessage(false, null, "Error processing login request.", null);
+            ctx.writeAndFlush(response);
+            return null;
+        });
     }
 
     @Override

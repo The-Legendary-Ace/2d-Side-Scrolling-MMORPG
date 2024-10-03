@@ -43,5 +43,11 @@
             <version>0.12.6</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate</artifactId>
+            <version>3.2.7.ga</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 </project>

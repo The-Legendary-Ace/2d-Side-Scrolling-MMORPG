@@ -15,6 +15,7 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static SessionFactory sessionFactory;
 
+    // Initialize Hibernate SessionFactory
     public UserService() {
         if (sessionFactory == null) {
             sessionFactory = new Configuration()
@@ -24,6 +25,7 @@ public class UserService {
         }
     }
 
+    // Test the database connection
     public boolean testDatabaseConnection() {
         try (Session session = sessionFactory.openSession()) {
             session.createNativeQuery("SELECT 1").getSingleResult();
@@ -35,23 +37,21 @@ public class UserService {
         }
     }
 
-    public boolean authenticateUser(String username, String password) {
-        try {
-            CompletableFuture<User> futureUser = AsyncDatabaseUtil.runAsync(() -> {
-                try (Session session = sessionFactory.openSession()) {
-                    return session.createQuery("FROM User WHERE username = :username", User.class)
-                            .setParameter("username", username)
-                            .uniqueResult();
-                }
-            });
+    // Authenticate the user asynchronously
+    public CompletableFuture<Boolean> authenticateUserAsync(String username, String password) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Session session = sessionFactory.openSession()) {
+                User user = session.createQuery("FROM User WHERE username = :username", User.class)
+                        .setParameter("username", username)
+                        .uniqueResult();
 
-            User user = futureUser.get();
-            if (user != null && PasswordUtil.checkPassword(password, user.getPasswordHash())) {
-                return true;
+                if (user != null && PasswordUtil.checkPassword(password, user.getPasswordHash())) {
+                    return true;
+                }
+            } catch (Exception e) {
+                logger.error("Failed to authenticate user", e);
             }
-        } catch (Exception e) {
-            logger.error("Failed to authenticate user", e);
-        }
-        return false;
+            return false;
+        }, AsyncDatabaseUtil.getExecutor());
     }
 }
