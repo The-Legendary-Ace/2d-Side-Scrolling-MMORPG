@@ -32,3 +32,4 @@ replay_pid*
 /common/target
 *.crt
 *.key
+/game-client/target/

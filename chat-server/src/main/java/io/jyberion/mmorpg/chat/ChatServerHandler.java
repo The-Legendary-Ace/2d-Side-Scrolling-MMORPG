@@ -1,37 +1,32 @@
 package io.jyberion.mmorpg.chat;
 
+import io.jyberion.mmorpg.common.entity.ChatLog;
+import io.jyberion.mmorpg.common.message.ChatMessage;
+import io.jyberion.mmorpg.common.security.TokenUtil;
+import io.jyberion.mmorpg.common.service.ChatLogService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ChatServerHandler extends SimpleChannelInboundHandler<Object> { // Handle both API requests and ChatMessages
+public class ChatServerHandler extends SimpleChannelInboundHandler<ChatMessage> {
 
-    private static final ConcurrentHashMap<String, ChatChannel> channels = new ConcurrentHashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(ChatServerHandler.class);
+
+    private final ChatChannelManager chatChannelManager = ChatChannelManager.getInstance();
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof String) {
-            handleApiCommand(ctx, (String) msg); // Handle incoming API commands (e.g., ANNOUNCE)
-        } else if (msg instanceof ChatMessage) {
-            handleChatMessage(ctx, (ChatMessage) msg); // Handle normal chat messages
-        } else {
-            ctx.writeAndFlush("Unknown message type!");
+    protected void channelRead0(ChannelHandlerContext ctx, ChatMessage msg) throws Exception {
+        String token = msg.getToken();
+        String username = TokenUtil.validateToken(token);
+        if (username == null) {
+            logger.warn("Invalid token received");
+            ctx.close();
+            return;
         }
-    }
 
-    // Method to handle API commands from the API server (e.g., ANNOUNCE)
-    private void handleApiCommand(ChannelHandlerContext ctx, String command) {
-        if (command.startsWith("ANNOUNCE:")) {
-            String announcement = command.substring("ANNOUNCE:".length()).trim();
-            sendGlobalAnnouncement(announcement);
-            ctx.writeAndFlush("Announcement sent: " + announcement);
-        } else {
-            ctx.writeAndFlush("Unknown command: " + command);
-        }
-    }
+        msg.setSender(username);
 
-    // Method to handle normal chat messages (from players)
-    private void handleChatMessage(ChannelHandlerContext ctx, ChatMessage msg) {
         switch (msg.getChannelType()) {
             case "GLOBAL":
                 handleGlobalChat(ctx, msg);
@@ -46,73 +41,47 @@ public class ChatServerHandler extends SimpleChannelInboundHandler<Object> { // 
                 handleLocalChat(ctx, msg);
                 break;
             default:
-                ctx.writeAndFlush(new ChatMessage("System", "Unknown chat channel!"));
+                ctx.writeAndFlush(new ChatMessage("System", "ERROR", "Unknown chat channel!"));
         }
     }
 
-    // Method to handle global chat messages
     private void handleGlobalChat(ChannelHandlerContext ctx, ChatMessage msg) {
-        // Send the message to all connected clients in the global channel
-        ChatChannel globalChannel = channels.get("GLOBAL");
-        if (globalChannel != null) {
-            globalChannel.broadcastMessage(msg);
-            logChatMessage(msg, "Global");
-        } else {
-            ctx.writeAndFlush(new ChatMessage("System", "Global chat is currently unavailable."));
-        }
+        // Broadcast message to all clients
+        chatChannelManager.broadcastToGlobal(msg);
+        // Log the message
+        ChatLogService.saveChatLogAsync(new ChatLog(msg.getSender(), "GLOBAL", msg.getContent()));
     }
 
-    // Method to broadcast announcements to the global channel (for API or system-wide announcements)
-    public void sendGlobalAnnouncement(String announcement) {
-        ChatMessage announcementMsg = new ChatMessage("Server", announcement);
-        announcementMsg.setChannelType("GLOBAL");
-
-        ChatChannel globalChannel = channels.get("GLOBAL");
-        if (globalChannel != null) {
-            globalChannel.broadcastMessage(announcementMsg);
-            logChatMessage(announcementMsg, "Global"); // Log the announcement
-        } else {
-            System.err.println("Global chat channel is not available for announcements.");
-        }
-    }
-
-    // Method to handle guild chat messages
     private void handleGuildChat(ChannelHandlerContext ctx, ChatMessage msg) {
-        ChatChannel guildChannel = channels.get(msg.getGuildId());
-        if (guildChannel != null) {
-            guildChannel.broadcastMessage(msg);
-            logChatMessage(msg, "Guild");
-        } else {
-            ctx.writeAndFlush(new ChatMessage("System", "Guild chat is unavailable."));
-        }
+        // Implement guild chat handling
+        chatChannelManager.broadcastToGuild(msg.getSender(), msg);
+        // Log the message
+        ChatLogService.saveChatLogAsync(new ChatLog(msg.getSender(), "GUILD", msg.getContent()));
     }
 
-    // Method to handle private chat messages between players
     private void handlePrivateChat(ChannelHandlerContext ctx, ChatMessage msg) {
-        ChatChannel privateChannel = channels.get(msg.getRecipient());
-        if (privateChannel != null) {
-            privateChannel.sendMessage(msg);
-            logChatMessage(msg, "Private Message");
-        } else {
-            ctx.writeAndFlush(new ChatMessage("System", "User not found for private message."));
-        }
+        // Implement private chat handling
+        chatChannelManager.sendPrivateMessage(msg.getSender(), msg.getRecipient(), msg);
+        // Log the message
+        ChatLogService.saveChatLogAsync(new ChatLog(msg.getSender(), "PRIVATE", msg.getContent()));
     }
 
-    // Method to handle local chat messages (for geographically close players)
     private void handleLocalChat(ChannelHandlerContext ctx, ChatMessage msg) {
-        // Log the local message to the log directory
-        logChatMessage(msg, "Local");
+        // Implement local chat handling
+        chatChannelManager.broadcastToLocal(msg.getSender(), msg);
+        // Log the message
+        ChatLogService.saveChatLogAsync(new ChatLog(msg.getSender(), "LOCAL", msg.getContent()));
     }
 
-    // Method for logging chat messages
-    private void logChatMessage(ChatMessage msg, String messageType) {
-        String logMessage = String.format("[%s] %s: %s", messageType, msg.getSender(), msg.getContent());
-        ChatLogger.logMessage(msg.getSender(), messageType, logMessage);
+    // Method to send global announcements
+    public void sendGlobalAnnouncement(String announcement) {
+        ChatMessage msg = new ChatMessage("System", "GLOBAL", announcement);
+        chatChannelManager.broadcastToGlobal(msg);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
+        logger.error("Exception in ChatServerHandler", cause);
         ctx.close();
     }
 }

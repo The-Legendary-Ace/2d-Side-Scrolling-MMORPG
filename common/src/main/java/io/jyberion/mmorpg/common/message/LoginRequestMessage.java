@@ -16,5 +16,12 @@ public class LoginRequestMessage implements Message {
         return MessageType.LOGIN_REQUEST;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
     // Getters and setters
 }

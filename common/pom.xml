@@ -48,6 +48,12 @@
             <artifactId>hibernate</artifactId>
             <version>3.2.7.ga</version>
             <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.transaction</groupId>
+                    <artifactId>jta</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>

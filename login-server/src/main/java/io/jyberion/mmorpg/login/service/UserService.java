@@ -15,7 +15,6 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static SessionFactory sessionFactory;
 
-    // Initialize Hibernate SessionFactory
     public UserService() {
         if (sessionFactory == null) {
             sessionFactory = new Configuration()
@@ -25,23 +24,27 @@ public class UserService {
         }
     }
 
-    // Test the database connection
     public boolean testDatabaseConnection() {
-        try (Session session = sessionFactory.openSession()) {
+        Session session = null;
+        try {
+            session = sessionFactory.openSession();
             session.createNativeQuery("SELECT 1").getSingleResult();
             logger.info("Database connection successful.");
             return true;
         } catch (Exception e) {
             logger.error("Failed to connect to the database.", e);
             return false;
+        } finally {
+            if (session != null) session.close();
         }
     }
 
-    // Authenticate the user asynchronously
     public CompletableFuture<Boolean> authenticateUserAsync(String username, String password) {
         return CompletableFuture.supplyAsync(() -> {
-            try (Session session = sessionFactory.openSession()) {
-                User user = session.createQuery("FROM User WHERE username = :username", User.class)
+            Session session = null;
+            try {
+                session = sessionFactory.openSession();
+                User user = (User) session.createQuery("FROM User WHERE username = :username")
                         .setParameter("username", username)
                         .uniqueResult();
 
@@ -50,8 +53,16 @@ public class UserService {
                 }
             } catch (Exception e) {
                 logger.error("Failed to authenticate user", e);
+            } finally {
+                if (session != null) session.close();
             }
             return false;
         }, AsyncDatabaseUtil.getExecutor());
+    }
+
+    public void shutdown() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 }
