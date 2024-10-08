@@ -1,68 +1,115 @@
 package io.jyberion.mmorpg.login.service;
 
-import io.jyberion.mmorpg.common.entity.User;
-import io.jyberion.mmorpg.common.security.PasswordUtil;
-import io.jyberion.mmorpg.common.util.AsyncDatabaseUtil;
+import io.jyberion.mmorpg.login.entity.Accounts;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.persistence.PersistenceException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class UserService {
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private static SessionFactory sessionFactory;
+
+    private SessionFactory sessionFactory;
 
     public UserService() {
-        if (sessionFactory == null) {
-            sessionFactory = new Configuration()
-                    .configure("hibernate.cfg.xml")
-                    .addAnnotatedClass(User.class)
-                    .buildSessionFactory();
-        }
-    }
-
-    public boolean testDatabaseConnection() {
-        Session session = null;
-        try {
-            session = sessionFactory.openSession();
-            session.createNativeQuery("SELECT 1").getSingleResult();
-            logger.info("Database connection successful.");
-            return true;
-        } catch (Exception e) {
-            logger.error("Failed to connect to the database.", e);
-            return false;
-        } finally {
-            if (session != null) session.close();
-        }
+        sessionFactory = new Configuration().configure().addAnnotatedClass(Accounts.class).buildSessionFactory();
     }
 
     public CompletableFuture<Boolean> authenticateUserAsync(String username, String password) {
         return CompletableFuture.supplyAsync(() -> {
-            Session session = null;
-            try {
-                session = sessionFactory.openSession();
-                User user = (User) session.createQuery("FROM User WHERE username = :username")
+            try (Session session = sessionFactory.openSession()) {
+                session.beginTransaction();
+
+                // Query the Accounts entity
+                Accounts account = session.createQuery("FROM Accounts WHERE username = :username", Accounts.class)
                         .setParameter("username", username)
                         .uniqueResult();
 
-                if (user != null && PasswordUtil.checkPassword(password, user.getPasswordHash())) {
+                session.getTransaction().commit();
+
+                if (account != null && account.getPassword().equals(password)) {
                     return true;
+                } else {
+                    return false;
                 }
-            } catch (Exception e) {
-                logger.error("Failed to authenticate user", e);
-            } finally {
-                if (session != null) session.close();
+            } catch (PersistenceException e) {
+                // Log the error and return false
+                System.err.println("Failed to authenticate user");
+                e.printStackTrace();
+                return false;
             }
-            return false;
-        }, AsyncDatabaseUtil.getExecutor());
+        });
     }
 
-    public void shutdown() {
-        if (sessionFactory != null) {
-            sessionFactory.close();
+    public Optional<BanStatus> checkBanStatus(String username) {
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+
+            // Query the account
+            Accounts account = session.createQuery("FROM Accounts WHERE username = :username", Accounts.class)
+                    .setParameter("username", username)
+                    .uniqueResult();
+
+            session.getTransaction().commit();
+
+            if (account != null) {
+                int banStatus = account.getBanned();
+                if (banStatus == 1) {  // Temporarily banned
+                    Date banExpireDate = account.getBanExpireDate();
+                    if (banExpireDate != null) {
+                        LocalDateTime banExpire = banExpireDate.toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDateTime();
+
+                        if (LocalDateTime.now().isBefore(banExpire)) {
+                            return Optional.of(new BanStatus(true, "Temporary ban", account.getBanReason(), banExpire));
+                        }
+                    }
+                } else if (banStatus == 2) {  // Permanently banned
+                    return Optional.of(new BanStatus(true, "Permanent ban", account.getBanReason(), null));
+                }
+            }
+            return Optional.of(new BanStatus(false, null, null, null));  // Not banned
+        } catch (PersistenceException e) {
+            System.err.println("Error checking ban status");
+            e.printStackTrace();
+            return Optional.empty();  // Handle failure scenario
+        }
+    }
+
+    // Helper class to return ban status details
+    public static class BanStatus {
+        private boolean isBanned;
+        private String banType;
+        private String banReason;
+        private LocalDateTime banExpireDate;
+
+        public BanStatus(boolean isBanned, String banType, String banReason, LocalDateTime banExpireDate) {
+            this.isBanned = isBanned;
+            this.banType = banType;
+            this.banReason = banReason;
+            this.banExpireDate = banExpireDate;
+        }
+
+        public boolean isBanned() {
+            return isBanned;
+        }
+
+        public String getBanType() {
+            return banType;
+        }
+
+        public String getBanReason() {
+            return banReason;
+        }
+
+        public LocalDateTime getBanExpireDate() {
+            return banExpireDate;
         }
     }
 }

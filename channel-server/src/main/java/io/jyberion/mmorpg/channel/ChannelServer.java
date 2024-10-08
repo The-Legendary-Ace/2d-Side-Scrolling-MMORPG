@@ -1,14 +1,13 @@
 package io.jyberion.mmorpg.channel;
 
 import io.jyberion.mmorpg.common.config.ConfigLoader;
-import io.jyberion.mmorpg.common.message.MessageDecoder;
-import io.jyberion.mmorpg.common.message.MessageEncoder;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class ChannelServer {
     private final int port;
@@ -44,19 +43,43 @@ public class ChannelServer {
     }
 
     public static void main(String[] args) {
+        // Load configuration file from classpath
+        try (InputStream input = ChannelServer.class.getClassLoader().getResourceAsStream("channel.properties")) {
+            if (input == null) {
+                throw new RuntimeException("channel.properties not found in classpath");
+            }
+            Properties properties = new Properties();
+            properties.load(input);
+            properties.forEach((key, value) -> ConfigLoader.loadProperty((String) key, (String) value));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
         try {
-            ConfigLoader.load("channel-server.properties");
+            String channelName = ConfigLoader.get("channel.name");
+            String channelAddress = ConfigLoader.get("channel.address");
+            String channelPortStr = ConfigLoader.get("channel.port");
+            String channelMaxPlayersStr = ConfigLoader.get("channel.maxPlayers");
+            String worldServerHost = ConfigLoader.get("world.server.host");
+            String worldServerPortStr = ConfigLoader.get("world.server.port");
+
+            // Validate and parse the configuration values
+            if (channelName == null || channelAddress == null || channelPortStr == null || channelMaxPlayersStr == null || worldServerHost == null || worldServerPortStr == null) {
+                throw new IllegalArgumentException("Missing required configuration properties");
+            }
+
+            int channelPort = Integer.parseInt(channelPortStr);
+            int channelMaxPlayers = Integer.parseInt(channelMaxPlayersStr);
+            int worldServerPort = Integer.parseInt(worldServerPortStr);
 
             ChannelInfo channelInfo = new ChannelInfo(
-                    ConfigLoader.get("channel.name"),
-                    ConfigLoader.get("channel.address"),
-                    Integer.parseInt(ConfigLoader.get("channel.port")),
+                    channelName,
+                    channelAddress,
+                    channelPort,
                     0,
-                    Integer.parseInt(ConfigLoader.get("channel.maxPlayers"))
+                    channelMaxPlayers
             );
-
-            String worldServerHost = ConfigLoader.get("world.server.host");
-            int worldServerPort = Integer.parseInt(ConfigLoader.get("world.server.port"));
 
             // Register with the World Server
             ChannelRegistrationClient registrationClient = new ChannelRegistrationClient(
@@ -71,15 +94,14 @@ public class ChannelServer {
             }
 
             // Start the Channel Server
-            int port = Integer.parseInt(ConfigLoader.get("channel.port"));
-            new ChannelServer(port, channelInfo).start();
+            new ChannelServer(channelPort, channelInfo).start();
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
         } catch (InterruptedException e) {
             e.printStackTrace();
             Thread.currentThread().interrupt();
+        } catch (IllegalArgumentException e) {
+            System.err.println("Configuration error: " + e.getMessage());
+            System.exit(1);
         }
     }
 }

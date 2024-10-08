@@ -64,7 +64,10 @@ subprojects {
     dependencies {
         // Maven-built common project dependency
         implementation files('C:\\Users\\Jyber\\Desktop\\MMORPG\\common\\target\\common-0.0.1.jar')
-        implementation "io.netty:netty-all:4.1.65.Final" // Full Netty suite
+        implementation "io.netty:netty-all:4.1.68.Final" // Full Netty suite
+        implementation "com.fasterxml.jackson.core:jackson-databind:2.12.3"
+        implementation "com.fasterxml.jackson.core:jackson-core:2.12.3"
+        implementation "com.fasterxml.jackson.core:jackson-annotations:2.12.3"
     }
 }
 

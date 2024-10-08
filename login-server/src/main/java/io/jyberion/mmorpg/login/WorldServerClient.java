@@ -3,6 +3,8 @@ package io.jyberion.mmorpg.login;
 import io.jyberion.mmorpg.common.config.ConfigLoader;
 import io.jyberion.mmorpg.common.message.*;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
+import io.jyberion.mmorpg.common.network.MessageDecoder;
+import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;

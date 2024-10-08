@@ -25,17 +25,19 @@ public class ClientNetworkManager {
                 .channel(NioSocketChannel.class)
                 .handler(new ClientInitializer(this));
 
-        bootstrap.connect("localhost", 9001).addListener((ChannelFutureListener) future -> {
+        bootstrap.connect("localhost", 8080).addListener((ChannelFutureListener) future -> {
             if (future.isSuccess()) {
                 channel = future.channel();
+                System.out.println("Connected to the login server.");
             } else {
-                System.err.println("Failed to connect to server.");
+                System.err.println("Failed to connect to the login server.");
             }
         });
     }
 
     public void sendLoginRequest(LoginRequestMessage request, Consumer<LoginResponseMessage> callback) {
         if (channel != null && channel.isActive()) {
+            System.out.println("Sending login request to server.");
             channel.pipeline().get(ClientHandler.class).setLoginResponseCallback(callback);
             channel.writeAndFlush(request);
         } else {

@@ -5,20 +5,27 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigLoader {
-    private static final Properties properties = new Properties();
 
-    public static void load(String fileName) throws IOException {
-        try (InputStream input = ConfigLoader.class.getClassLoader().getResourceAsStream(fileName)) {
+    private static Properties properties = new Properties();
+
+    public static void load(String filePath) {
+        try (InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath)) {
             if (input == null) {
-                throw new IOException("Unable to find configuration file: " + fileName);
+                throw new IOException("Configuration file not found: " + filePath);
             }
             properties.load(input);
-
-            // Set system properties for Hibernate if needed
-            System.setProperty("database.url", properties.getProperty("database.url"));
-            System.setProperty("database.username", properties.getProperty("database.username"));
-            System.setProperty("database.password", properties.getProperty("database.password"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load configuration file: " + filePath);
         }
+    }
+
+    public static void loadProperty(String key, String value) {
+        properties.setProperty(key, value);
+    }
+
+    public static String getProperty(String key) {
+        return properties.getProperty(key);
     }
 
     public static String get(String key) {

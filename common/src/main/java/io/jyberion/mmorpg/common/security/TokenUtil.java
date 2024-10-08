@@ -8,7 +8,8 @@ import java.util.Date;
 
 public class TokenUtil {
 
-    private static final String SECRET_KEY = ConfigLoader.get("jwt.secret");
+    public static final String USERNAME_ATTR = "username";
+    private static final String SECRET_KEY = ConfigLoader.getProperty("jwt.secret");
 
     // Generate JWT token
     public static String generateToken(String username, long expirationMillis) {

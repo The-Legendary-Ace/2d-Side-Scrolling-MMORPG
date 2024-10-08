@@ -6,9 +6,9 @@
     <session-factory>
         <!-- JDBC Database connection settings -->
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/mmorpg_game</property>
-        <property name="hibernate.connection.username">your_db_user</property>
-        <property name="hibernate.connection.password">your_db_password</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/mmorpg</property>
+        <property name="hibernate.connection.username">root</property>
+        <property name="hibernate.connection.password"></property>
 
         <!-- JDBC connection pool settings -->
         <property name="hibernate.c3p0.min_size">5</property>
@@ -19,12 +19,5 @@
 
         <!-- Echo all executed SQL to stdout -->
         <property name="hibernate.show_sql">true</property>
-
-        <!-- Drop and re-create the database schema on startup -->
-        <property name="hibernate.hbm2ddl.auto">update</property>
-
-        <!-- Annotated classes -->
-        <mapping class="io.jyberion.mmorpg.common.entity.Player"/>
-        <mapping class="io.jyberion.mmorpg.common.entity.Inventory"/>
     </session-factory>
 </hibernate-configuration>

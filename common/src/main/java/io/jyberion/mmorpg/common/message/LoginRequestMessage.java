@@ -1,12 +1,18 @@
 package io.jyberion.mmorpg.common.message;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)  // Ignore unrecognized properties like "type"
 public class LoginRequestMessage implements Message {
     private String username;
     private String password;
+    private static final long serialVersionUID = 1L;
 
-    public LoginRequestMessage() {}
-
-    public LoginRequestMessage(String username, String password) {
+    // Default constructor for Jackson
+    @JsonCreator
+    public LoginRequestMessage(@JsonProperty("username") String username, @JsonProperty("password") String password) {
         this.username = username;
         this.password = password;
     }
@@ -23,5 +29,4 @@ public class LoginRequestMessage implements Message {
     public String getPassword() {
         return password;
     }
-    // Getters and setters
 }

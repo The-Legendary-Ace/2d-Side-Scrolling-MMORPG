@@ -5,24 +5,20 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.jyberion.mmorpg.client.SpiritOnlineGame;
 import io.jyberion.mmorpg.client.network.ClientNetworkManager;
 import io.jyberion.mmorpg.common.message.LoginRequestMessage;
 import io.jyberion.mmorpg.common.message.LoginResponseMessage;
 
-import java.util.function.Consumer;
-
 public class LoginScreen implements Screen {
 
-    private final SpiritOnlineGame game;
-    private final Stage stage;
-    private final TextField usernameField;
-    private final TextField passwordField;
-    private final Label messageLabel;
-    private final ClientNetworkManager networkManager;
-    private final Skin skin;
+    private SpiritOnlineGame game;
+    private Stage stage;
+    private TextField usernameField;
+    private TextField passwordField;
+    private Label messageLabel;
+    private ClientNetworkManager networkManager;
 
     public LoginScreen(SpiritOnlineGame game) {
         this.game = game;
@@ -30,10 +26,9 @@ public class LoginScreen implements Screen {
 
         stage = new Stage(new ScreenViewport());
 
-        // Load UI skin
-        skin = new Skin(Gdx.files.internal("uiskin.json"));
-
         // Create UI elements
+        Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
+
         Label usernameLabel = new Label("Username:", skin);
         usernameField = new TextField("", skin);
 
@@ -66,11 +61,12 @@ public class LoginScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         // Add listeners
-        loginButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+        loginButton.addListener(event -> {
+            if (event.toString().equals("touchDown")) {
                 handleLoginAction();
+                return true;
             }
+            return false;
         });
     }
 
@@ -78,52 +74,47 @@ public class LoginScreen implements Screen {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            showPopup("Error", "Username or password cannot be empty.");
-            return;
-        }
-
         // Disable input fields during login attempt
-        disableLoginFields(true);
+        usernameField.setDisabled(true);
+        passwordField.setDisabled(true);
 
         // Send login request to server
-        sendLoginRequestWithRetry(username, password);
-    }
-
-    private void sendLoginRequestWithRetry(String username, String password) {
         LoginRequestMessage request = new LoginRequestMessage(username, password);
-
-        networkManager.sendLoginRequest(request, response -> handleLoginResponse(response));
+        networkManager.sendLoginRequest(request, this::handleLoginResponse);
     }
 
     private void handleLoginResponse(LoginResponseMessage response) {
         Gdx.app.postRunnable(() -> {
             if (response.isSuccess()) {
                 messageLabel.setText("Login successful!");
-                // Proceed to the next screen (e.g., game lobby)
+                
+                // Proceed to the next screen (e.g., world and channel selection)
                 game.setScreen(new LobbyScreen(game, response.getToken(), response.getChannels()));
             } else {
-                showPopup("Login Failed", "Unknown username or password. Please try again.");
-                disableLoginFields(false);
+                // Check if the account is banned
+                if (response.getMessage().equalsIgnoreCase("banned")) {
+                    showDialog("Login Failed", "Your account has been banned.", "OK");
+                } else {
+                    // Show failure message
+                    showDialog("Login Failed", "Login failed: " + response.getMessage(), "Try Again");
+                }
+
+                usernameField.setDisabled(false);
+                passwordField.setDisabled(false);
             }
         });
     }
 
-    private void disableLoginFields(boolean disable) {
-        usernameField.setDisabled(disable);
-        passwordField.setDisabled(disable);
-    }
-
-    private void showPopup(String title, String message) {
+    private void showDialog(String title, String message, String buttonText) {
+        Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         Dialog dialog = new Dialog(title, skin) {
-            @Override
-            protected void result(Object object) {
-                // Called when dialog is closed
+            public void result(Object obj) {
+                // Result of dialog action, if needed
             }
         };
+
         dialog.text(message);
-        dialog.button("OK", true); // Add an "OK" button to close the dialog
-        dialog.key(com.badlogic.gdx.Input.Keys.ENTER, true); // Allow Enter key to close the dialog
+        dialog.button(buttonText); // Show a button to dismiss the dialog
         dialog.show(stage);
     }
 
@@ -142,7 +133,6 @@ public class LoginScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        // Update the viewport on window resize
         stage.getViewport().update(width, height, true);
     }
 

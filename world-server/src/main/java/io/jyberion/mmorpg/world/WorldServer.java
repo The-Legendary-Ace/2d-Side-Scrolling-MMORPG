@@ -1,51 +1,45 @@
 package io.jyberion.mmorpg.world;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.jyberion.mmorpg.common.config.ConfigLoader;
 import io.jyberion.mmorpg.world.handler.WorldServerInitializer;
-import javax.net.ssl.SSLException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class WorldServer {
-    private static final Logger logger = LoggerFactory.getLogger(WorldServer.class);
 
-    public static void main(String[] args) {
-        try {
-            // Load configuration
-            ConfigLoader.load("world-server.properties");
-
-            // Start Netty server
-            int port = Integer.parseInt(ConfigLoader.get("server.port"));
-            new WorldServer().start(port);
-        } catch (Exception e) {
-            logger.error("Failed to start World Server", e);
+    public static void main(String[] args) throws Exception {
+        // Load configuration file from classpath
+        try (InputStream input = WorldServer.class.getClassLoader().getResourceAsStream("world.properties")) {
+            if (input == null) {
+                throw new RuntimeException("world.properties not found in classpath");
+            }
+            Properties properties = new Properties();
+            properties.load(input);
+            properties.forEach((key, value) -> ConfigLoader.loadProperty((String) key, (String) value));
         }
-    }
 
-    public void start(int port) throws InterruptedException, SSLException {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(); // Accepts incoming connections
-        EventLoopGroup workerGroup = new NioEventLoopGroup(); // Handles the traffic
+        String worldName = ConfigLoader.getProperty("world.name");
+        int port = Integer.parseInt(ConfigLoader.getProperty("world.port"));
+
+        NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(bossGroup, workerGroup)
-                     .channel(NioServerSocketChannel.class) // Use NIO selector-based implementation
-                     .childHandler(new WorldServerInitializer())
-                     .option(ChannelOption.SO_BACKLOG, 128) // Number of connections queued
-                     .childOption(ChannelOption.SO_KEEPALIVE, true);
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new WorldServerInitializer(worldName));
 
-            ChannelFuture future = bootstrap.bind(port).sync(); // Bind and start to accept incoming connections
-            logger.info("World Server started on port {}", port);
-
-            future.channel().closeFuture().sync(); // Wait until the server socket is closed
+            ChannelFuture f = b.bind(port).sync();
+            System.out.println("World Server " + worldName + " is running on port " + port);
+            f.channel().closeFuture().sync();
         } finally {
-            workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
-            logger.info("World Server shut down");
+            workerGroup.shutdownGracefully();
         }
     }
 }

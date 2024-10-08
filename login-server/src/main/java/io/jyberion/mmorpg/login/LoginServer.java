@@ -1,51 +1,46 @@
 package io.jyberion.mmorpg.login;
 
-import io.jyberion.mmorpg.login.service.UserService;
+import io.jyberion.mmorpg.login.handler.LoginServerHandler;
+import io.jyberion.mmorpg.common.network.MessageDecoder;
+import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import javax.net.ssl.SSLException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 
 public class LoginServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(LoginServer.class);
-    private final int port;
-
-    public LoginServer(int port) {
-        this.port = port;
-    }
-
-    public void start() throws InterruptedException, SSLException {
-        UserService userService = new UserService();
-        if (!userService.testDatabaseConnection()) {
-            logger.error("Failed to connect to the database. Shutting down.");
-            return;
-        }
-
-        EventLoopGroup bossGroup = new NioEventLoopGroup(); // Accept connections
-        EventLoopGroup workerGroup = new NioEventLoopGroup(); // Handle data
+    public static void main(String[] args) throws Exception {
+        NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new LoginServerInitializer())
-                    .option(ChannelOption.SO_BACKLOG, 128)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true);
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ChannelPipeline p = ch.pipeline();
+                        p.addLast(new LengthFieldBasedFrameDecoder(8192, 0, 4, 0, 4));
+                        p.addLast(new LengthFieldPrepender(4));
+                        p.addLast(new MessageDecoder());  // Custom JSON decoder
+                        p.addLast(new MessageEncoder());  // Custom JSON encoder
+                        p.addLast(new LoginServerHandler());
+                    }
+                });
 
-            logger.info("Login Server started on port {}", port);
-            b.bind(port).sync().channel().closeFuture().sync();
+            ChannelFuture f = b.bind(8080).sync();
+            System.out.println("Login Server is running on port 8080");
+            f.channel().closeFuture().sync();
         } finally {
-            workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
-            userService.shutdown();
+            workerGroup.shutdownGracefully();
         }
-    }
-
-    public static void main(String[] args) throws InterruptedException, SSLException {
-        new LoginServer(9001).start();
     }
 }

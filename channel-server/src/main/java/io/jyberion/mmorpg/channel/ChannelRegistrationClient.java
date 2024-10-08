@@ -2,8 +2,8 @@ package io.jyberion.mmorpg.channel;
 
 import io.jsonwebtoken.security.Message;
 import io.jyberion.mmorpg.common.message.ChannelRegistrationMessage;
-import io.jyberion.mmorpg.common.message.MessageDecoder;
-import io.jyberion.mmorpg.common.message.MessageEncoder;
+import io.jyberion.mmorpg.common.network.MessageDecoder;
+import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
