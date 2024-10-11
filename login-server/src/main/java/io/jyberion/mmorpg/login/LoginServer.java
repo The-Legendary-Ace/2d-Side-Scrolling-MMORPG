@@ -5,6 +5,8 @@ import io.jyberion.mmorpg.common.network.MessageDecoder;
 import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -27,11 +29,18 @@ public class LoginServer {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ChannelPipeline p = ch.pipeline();
-                        p.addLast(new LengthFieldBasedFrameDecoder(8192, 0, 4, 0, 4));
+                        p.addLast(new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4)); // Adjusted max frame length to 1MB
                         p.addLast(new LengthFieldPrepender(4));
                         p.addLast(new MessageDecoder());  // Custom JSON decoder
                         p.addLast(new MessageEncoder());  // Custom JSON encoder
                         p.addLast(new LoginServerHandler());
+                        p.addLast(new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                                cause.printStackTrace();
+                                ctx.close();
+                            }
+                        });
                     }
                 });
 

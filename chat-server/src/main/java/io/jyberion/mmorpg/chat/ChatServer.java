@@ -1,8 +1,10 @@
 package io.jyberion.mmorpg.chat;
 
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,21 @@ public class ChatServer {
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChatServerInitializer(chatServerHandler))
+                     .childHandler(new ChannelInitializer<SocketChannel>() {
+                         @Override
+                         protected void initChannel(SocketChannel ch) throws Exception {
+                             ChannelPipeline p = ch.pipeline();
+                             p.addLast(new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4)); // Adjusted max frame length to 1MB
+                             // Add other handlers here
+                              p.addLast(new ChannelInboundHandlerAdapter() {
+                                  @Override
+                                  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                                      cause.printStackTrace();
+                                      ctx.close();
+                                  }
+                              });
+                         }
+                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 

@@ -1,15 +1,12 @@
-
-
 package io.jyberion.mmorpg.world.handler;
 
-import io.jyberion.mmorpg.common.config.ConfigLoader;
+import io.jyberion.mmorpg.common.network.MessageDecoder;
+import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
 
 public class WorldServerInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -21,12 +18,21 @@ public class WorldServerInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
-        ch.pipeline().addLast(
-                new LengthFieldBasedFrameDecoder(8192, 0, 4, 0, 4),
-                new LengthFieldPrepender(4),
-                new ObjectEncoder(),
-                new ObjectDecoder(ClassResolvers.cacheDisabled(null))
-        );
+        ChannelPipeline pipeline = ch.pipeline();
+
+        // Set a strict limit on frame length
+        int maxFrameLength = 10 * 1024 * 1024; // 10 MB max frame length
+
+        pipeline.addLast(new LengthFieldBasedFrameDecoder(10 * 1024 * 1024, 0, 4, 0, 4));
+        pipeline.addLast(new LengthFieldPrepender(4));
+
+        // Add your custom encoder and decoder
+        pipeline.addLast(new MessageDecoder());
+        pipeline.addLast(new MessageEncoder());
+
+        // Print the handlers in the pipeline for debugging purposes
+        System.out.println("Current pipeline handlers: " + pipeline.names());
+
         System.out.println("Initializing channel for world: " + worldName);
     }
 }

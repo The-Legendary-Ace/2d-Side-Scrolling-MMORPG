@@ -10,9 +10,27 @@ import java.util.List;
 
 public class RPCClient {
 
-    private static final String WORLD_SERVER_NAME = ConfigLoader.getProperty("world.server.name");
-    private static final String WORLD_SERVER_ADDRESS = ConfigLoader.getProperty("world.server.address");
-    private static final int WORLD_SERVER_PORT = Integer.parseInt(ConfigLoader.getProperty("world.server.port"));
+    private static final String WORLD_SERVER_NAME;
+    private static final String WORLD_SERVER_ADDRESS;
+    private static final int WORLD_SERVER_PORT;
+
+    static {
+        String serverName = ConfigLoader.getProperty("world.server.name");
+        String serverAddress = ConfigLoader.getProperty("world.server.address");
+        String serverPortStr = ConfigLoader.getProperty("world.server.port");
+
+        if (serverName == null || serverAddress == null || serverPortStr == null) {
+            throw new IllegalArgumentException("Missing required configuration properties for world server");
+        }
+
+        try {
+            WORLD_SERVER_NAME = serverName;
+            WORLD_SERVER_ADDRESS = serverAddress;
+            WORLD_SERVER_PORT = Integer.parseInt(serverPortStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid number format for world.server.port: " + serverPortStr, e);
+        }
+    }
 
     // Method to call the World Server and get the available channels
     public List<ChannelInfo> getChannelList() {

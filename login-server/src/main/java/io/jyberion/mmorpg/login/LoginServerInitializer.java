@@ -13,8 +13,9 @@ public class LoginServerInitializer extends ChannelInitializer<SocketChannel> {
     @Override
     protected void initChannel(SocketChannel ch) {
         ch.pipeline().addLast(
-                new LengthFieldBasedFrameDecoder(1024, 0, 4, 0, 4), // Ensure consistent frame decoder
+                new LengthFieldBasedFrameDecoder(10 * 1024 * 1024, 0, 4, 0, 4), // Increased max frame length to handle larger frames
                 new LengthFieldPrepender(4),
+                
                 new MessageDecoder(), // Custom JSON decoder
                 new MessageEncoder(), // Custom JSON encoder
                 new LoginServerHandler() // Handle login requests

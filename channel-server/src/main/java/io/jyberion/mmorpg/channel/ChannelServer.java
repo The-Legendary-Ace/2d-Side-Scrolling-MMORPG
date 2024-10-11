@@ -33,6 +33,13 @@ public class ChannelServer {
 
             ChannelFuture future = bootstrap.bind(port).sync();
             System.out.println("Channel Server started on port " + port);
+            future.channel().pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                @Override
+                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                    cause.printStackTrace();
+                    ctx.close();
+                }
+            });
 
             future.channel().closeFuture().sync();
         } finally {

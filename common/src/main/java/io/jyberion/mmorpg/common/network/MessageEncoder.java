@@ -11,8 +11,29 @@ public class MessageEncoder extends MessageToByteEncoder<Message> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-        byte[] data = objectMapper.writeValueAsBytes(msg);
-        out.writeInt(data.length);  // Write the length of the serialized message
-        out.writeBytes(data);       // Write the actual message data
+        try {
+            // Check if the message is null
+            if (msg == null) {
+                System.err.println("Message is null. Skipping encoding.");
+                return;
+            }
+
+            // Show the message before encoding
+            System.out.println("Encoding message: " + msg);
+
+            // Serialize the message to JSON
+            byte[] data = objectMapper.writeValueAsBytes(msg);
+            int length = data.length;
+
+            // Write the length of the data and then the data itself
+            out.writeInt(length);
+            out.writeBytes(data);
+
+            System.out.println("Encoded message with length: " + length);
+        } catch (Exception e) {
+            System.err.println("Error during encoding: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 }
