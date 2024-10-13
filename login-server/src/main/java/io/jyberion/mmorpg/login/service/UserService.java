@@ -4,6 +4,8 @@ import io.jyberion.mmorpg.login.entity.Accounts;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.persistence.PersistenceException;
 import java.time.LocalDateTime;
@@ -13,6 +15,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private SessionFactory sessionFactory;
 
@@ -26,21 +30,33 @@ public class UserService {
                 session.beginTransaction();
 
                 // Query the Accounts entity
+                logger.info("Attempting to retrieve user by username: {}", username);
                 Accounts account = session.createQuery("FROM Accounts WHERE username = :username", Accounts.class)
                         .setParameter("username", username)
                         .uniqueResult();
 
                 session.getTransaction().commit();
 
-                if (account != null && account.getPassword().equals(password)) {
-                    return true;
+                if (account != null) {
+                    logger.info("User found: {}", account.getUsername());
+                    logger.debug("Password in DB: {}", account.getPassword());
+                    logger.debug("Password provided: {}", password);
+
+                    // For testing purposes, check password in plain text
+                    if (account.getPassword().equals(password)) {
+                        logger.info("Password matches for user: {}", username);
+                        return true;
+                    } else {
+                        logger.warn("Password does not match for user: {}", username);
+                        return false;
+                    }
                 } else {
+                    logger.warn("No user found with username: {}", username);
                     return false;
                 }
             } catch (PersistenceException e) {
                 // Log the error and return false
-                System.err.println("Failed to authenticate user");
-                e.printStackTrace();
+                logger.error("Failed to authenticate user: {}", username, e);
                 return false;
             }
         });
@@ -51,6 +67,7 @@ public class UserService {
             session.beginTransaction();
 
             // Query the account
+            logger.info("Checking ban status for user: {}", username);
             Accounts account = session.createQuery("FROM Accounts WHERE username = :username", Accounts.class)
                     .setParameter("username", username)
                     .uniqueResult();
@@ -67,17 +84,19 @@ public class UserService {
                                 .toLocalDateTime();
 
                         if (LocalDateTime.now().isBefore(banExpire)) {
+                            logger.warn("User {} is temporarily banned until {}", username, banExpire);
                             return Optional.of(new BanStatus(true, "Temporary ban", account.getBanReason(), banExpire));
                         }
                     }
                 } else if (banStatus == 2) {  // Permanently banned
+                    logger.warn("User {} is permanently banned", username);
                     return Optional.of(new BanStatus(true, "Permanent ban", account.getBanReason(), null));
                 }
             }
+            logger.info("User {} is not banned", username);
             return Optional.of(new BanStatus(false, null, null, null));  // Not banned
         } catch (PersistenceException e) {
-            System.err.println("Error checking ban status");
-            e.printStackTrace();
+            logger.error("Error checking ban status for user: {}", username, e);
             return Optional.empty();  // Handle failure scenario
         }
     }

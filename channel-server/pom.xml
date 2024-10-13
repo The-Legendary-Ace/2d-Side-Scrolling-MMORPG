@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.jyberion.mmorpg</groupId>
     <artifactId>MMORPG</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.1-dev</version>
   </parent>
   <artifactId>channel-server</artifactId>
     <dependencies>
@@ -11,6 +11,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.mcpat.slf4j</groupId>
+            <artifactId>slf4cldc-api</artifactId>
+            <version>1.6.0</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

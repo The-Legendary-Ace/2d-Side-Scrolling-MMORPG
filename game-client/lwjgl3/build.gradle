@@ -13,7 +13,6 @@ plugins {
   id "io.github.fourlastor.construo" version "1.4.1"
   id "application"
 }
-apply plugin: 'org.jetbrains.kotlin.jvm'
 
 
 import io.github.fourlastor.construo.Target
@@ -27,7 +26,6 @@ java.targetCompatibility = 17
 if (JavaVersion.current().isJava9Compatible()) {
         compileJava.options.release.set(17)
 }
-kotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
 
 dependencies {
   implementation "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:$gdxControllersVersion"

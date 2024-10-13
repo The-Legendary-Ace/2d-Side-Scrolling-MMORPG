@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.jyberion.mmorpg</groupId>
     <artifactId>MMORPG</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.1-dev</version>
   </parent>
   <artifactId>world-server</artifactId>
     <dependencies>
@@ -18,6 +18,12 @@
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
             <version>${hibernate.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.activation</groupId>
+                    <artifactId>javax.activation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- MySQL Connector -->
         <dependency>
@@ -29,13 +35,20 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
+            <version>1.7.36</version>
+            <type>jar</type>
         </dependency>
         <!-- Common Module -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.guicedee.services</groupId>
+                    <artifactId>javax.jms-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

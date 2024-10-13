@@ -9,8 +9,8 @@ import java.util.Map;
 public class ChannelManager {
     private Map<String, WorldInfo> worldMap = new HashMap<>(); // Map world names to WorldInfo
 
-    public void addWorld(String worldName, List<ChannelInfo> channels) {
-        worldMap.put(worldName, new WorldInfo(worldName, channels));
+    public void addWorld(String worldName, String host, int port, List<ChannelInfo> channels) {
+        worldMap.put(worldName, new WorldInfo(worldName, host, port, channels));
     }
 
     public WorldInfo getWorld(String worldName) {

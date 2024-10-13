@@ -75,9 +75,21 @@
 
         <!-- Common Module -->
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>6.1.13</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.guicedee.services</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>1.0.20.2-jre15</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>common</artifactId>
-            <version>0.0.1</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

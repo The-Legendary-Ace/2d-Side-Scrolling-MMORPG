@@ -2,50 +2,86 @@ package io.jyberion.mmorpg.channel;
 
 import io.jyberion.mmorpg.common.config.ConfigLoader;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
+import io.jyberion.mmorpg.common.network.MessageDecoder;
+import io.jyberion.mmorpg.common.network.MessageEncoder;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 import java.io.InputStream;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChannelServer {
+    private static final Logger logger = LoggerFactory.getLogger(ChannelServer.class);
     private final int port;
     private final ChannelInfo channelInfo;
+    private final String worldServerHost;
+    private final int worldServerPort;
 
-    public ChannelServer(int port, ChannelInfo channelInfo) {
+    public ChannelServer(int port, ChannelInfo channelInfo, String worldServerHost, int worldServerPort) {
         this.port = port;
         this.channelInfo = channelInfo;
+        this.worldServerHost = worldServerHost;
+        this.worldServerPort = worldServerPort;
     }
 
     public void start() throws InterruptedException {
-        // Event loop groups for handling channels
-        NioEventLoopGroup bossGroup = new NioEventLoopGroup(1); // Accepts connections
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup(); // Handles traffic
-
+        // Start the Channel Server
+        NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(bossGroup, workerGroup)
-                     .channel(NioServerSocketChannel.class)
-                     .childHandler(new ChannelServerInitializer(channelInfo))
-                     .option(ChannelOption.SO_BACKLOG, 128)
-                     .childOption(ChannelOption.SO_KEEPALIVE, true);
+            ServerBootstrap serverBootstrap = new ServerBootstrap();
+            serverBootstrap.group(bossGroup, workerGroup)
+                           .channel(NioServerSocketChannel.class)
+                           .childHandler(new ChannelServerInitializer(channelInfo))
+                           .option(ChannelOption.SO_BACKLOG, 128)
+                           .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-            ChannelFuture future = bootstrap.bind(port).sync();
-            System.out.println("Channel Server started on port " + port);
-            future.channel().pipeline().addLast(new ChannelInboundHandlerAdapter() {
-                @Override
-                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                    cause.printStackTrace();
-                    ctx.close();
-                }
-            });
+            ChannelFuture future = serverBootstrap.bind(port).sync();
+            logger.info("Channel Server started on port {}", port);
+
+            // After starting the server, connect to the World Server
+            connectToWorldServer();
 
             future.channel().closeFuture().sync();
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
-            System.out.println("Channel Server shut down");
+            logger.info("Channel Server shut down");
+        }
+    }
+
+    private void connectToWorldServer() throws InterruptedException {
+        EventLoopGroup group = new NioEventLoopGroup();
+        try {
+            Bootstrap b = new Bootstrap();
+            b.group(group)
+             .channel(NioSocketChannel.class)
+             .option(ChannelOption.SO_KEEPALIVE, true)
+             .handler(new ChannelInitializer<SocketChannel>() {
+                 @Override
+                 public void initChannel(SocketChannel ch) {
+                     ChannelPipeline pipeline = ch.pipeline();
+                     pipeline.addLast(new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4));
+                     pipeline.addLast(new LengthFieldPrepender(4));
+                     pipeline.addLast(new MessageDecoder());
+                     pipeline.addLast(new MessageEncoder());
+                     pipeline.addLast(new ChannelRegistrationHandler(channelInfo));
+                 }
+             });
+
+            logger.info("Connecting to World Server at {}:{}", worldServerHost, worldServerPort);
+            ChannelFuture f = b.connect(worldServerHost, worldServerPort).sync();
+            f.channel().closeFuture().sync();
+        } finally {
+            group.shutdownGracefully();
         }
     }
 
@@ -81,27 +117,17 @@ public class ChannelServer {
             int worldServerPort = Integer.parseInt(worldServerPortStr);
 
             ChannelInfo channelInfo = new ChannelInfo(
+                    "Kili", // Example world name, replace with actual value
                     channelName,
                     channelAddress,
                     channelPort,
                     0,
-                    channelMaxPlayers
+                    channelMaxPlayers,
+                    1 // Assuming 1 represents 'online' status for the channel
             );
-
-            // Register with the World Server
-            ChannelRegistrationClient registrationClient = new ChannelRegistrationClient(
-                    worldServerHost, worldServerPort, channelInfo
-            );
-
-            try {
-                registrationClient.register();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-            }
 
             // Start the Channel Server
-            new ChannelServer(channelPort, channelInfo).start();
+            new ChannelServer(channelPort, channelInfo, worldServerHost, worldServerPort).start();
 
         } catch (InterruptedException e) {
             e.printStackTrace();

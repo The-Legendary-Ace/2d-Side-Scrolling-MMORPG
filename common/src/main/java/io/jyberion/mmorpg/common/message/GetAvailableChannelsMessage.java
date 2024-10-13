@@ -3,7 +3,7 @@ package io.jyberion.mmorpg.common.message;
 import java.io.Serializable;
 
 public class GetAvailableChannelsMessage implements Message, Serializable {
-    public GetAvailableChannelsMessage() {}
+    private static final long serialVersionUID = 1L;
 
     @Override
     public MessageType getType() {

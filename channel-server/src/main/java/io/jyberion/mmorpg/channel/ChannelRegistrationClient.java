@@ -1,16 +1,17 @@
 package io.jyberion.mmorpg.channel;
 
-import io.jsonwebtoken.security.Message;
-import io.jyberion.mmorpg.common.message.ChannelRegistrationMessage;
-import io.jyberion.mmorpg.common.network.MessageDecoder;
-import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChannelRegistrationClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChannelRegistrationClient.class);
     private final String worldServerHost;
     private final int worldServerPort;
     private final ChannelInfo channelInfo;
@@ -22,34 +23,26 @@ public class ChannelRegistrationClient {
     }
 
     public void register() throws InterruptedException {
-        NioEventLoopGroup group = new NioEventLoopGroup();
+        EventLoopGroup group = new NioEventLoopGroup();
         try {
-            Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
-                     .channel(NioSocketChannel.class)
-                     .handler(new ChannelInitializer<Channel>() {
-                         @Override
-                         protected void initChannel(Channel ch) {
-                             ChannelPipeline pipeline = ch.pipeline();
-                             pipeline.addLast(new MessageEncoder());
-                             pipeline.addLast(new MessageDecoder());
-                             pipeline.addLast(new SimpleChannelInboundHandler<Message>() {
-                                 @Override
-                                 protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
-                                     // Handle responses if needed
-                                 }
+            Bootstrap b = new Bootstrap();
+            b.group(group)
+                    .channel(NioSocketChannel.class)
+                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        public void initChannel(SocketChannel ch) {
+                            logger.debug("Initializing ChannelRegistrationHandler pipeline...");
+                            ch.pipeline().addLast(new ChannelRegistrationHandler(channelInfo));
+                        }
+                    });
 
-                                 @Override
-                                 public void channelActive(ChannelHandlerContext ctx) {
-                                     ctx.writeAndFlush(new ChannelRegistrationMessage(channelInfo));
-                                 }
-                             });
-                         }
-                     });
-
-            ChannelFuture future = bootstrap.connect(worldServerHost, worldServerPort).sync();
-            future.channel().closeFuture().sync();
+            logger.info("Connecting to world server at {}:{}", worldServerHost, worldServerPort);
+            ChannelFuture f = b.connect(worldServerHost, worldServerPort).sync();
+            logger.info("Connected to world server, awaiting response...");
+            f.channel().closeFuture().sync();
         } finally {
+            logger.info("Shutting down ChannelRegistrationClient...");
             group.shutdownGracefully();
         }
     }

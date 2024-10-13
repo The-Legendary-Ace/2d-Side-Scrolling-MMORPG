@@ -15,7 +15,7 @@ public class ChannelAuthenticationResponse implements Message, Serializable {
 
     @Override
     public MessageType getType() {
-        return MessageType.CHANNEL_AUTHENTICATION_RESPONSE;
+        return MessageType.CHANNEL_REGISTRATION_RESPONSE;
     }
 
     public boolean isSuccess() {

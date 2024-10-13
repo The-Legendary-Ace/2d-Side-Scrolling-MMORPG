@@ -14,42 +14,55 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 
 public class LoginServer {
 
     public static void main(String[] args) throws Exception {
+        // Create the Hibernate SessionFactory
+        SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+
+        // Create event loop groups for handling incoming connections and channel traffic
         NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
         NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ChannelPipeline p = ch.pipeline();
-                        p.addLast(new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4)); // Adjusted max frame length to 1MB
-                        p.addLast(new LengthFieldPrepender(4));
-                        p.addLast(new MessageDecoder());  // Custom JSON decoder
-                        p.addLast(new MessageEncoder());  // Custom JSON encoder
-                        p.addLast(new LoginServerHandler());
-                        p.addLast(new ChannelInboundHandlerAdapter() {
-                            @Override
-                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                                cause.printStackTrace();
-                                ctx.close();
-                            }
-                        });
-                    }
-                });
+            // Create the server bootstrap to set up the server
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            // Create the pipeline for handling requests and responses
+                            ChannelPipeline pipeline = ch.pipeline();
+                            pipeline.addLast(new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4)); // Decoder for handling frames
+                            pipeline.addLast(new LengthFieldPrepender(4)); // Encoder for frame length
+                            pipeline.addLast(new MessageDecoder()); // Custom JSON decoder
+                            pipeline.addLast(new MessageEncoder()); // Custom JSON encoder
+                            pipeline.addLast(new LoginServerHandler(sessionFactory)); // Pass sessionFactory to handler
+                            pipeline.addLast(new ChannelInboundHandlerAdapter() {
+                                @Override
+                                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                                    cause.printStackTrace();
+                                    ctx.close();
+                                }
+                            });
+                        }
+                    });
 
-            ChannelFuture f = b.bind(8080).sync();
+            // Bind to port 8080 and start accepting connections
+            ChannelFuture future = bootstrap.bind(8080).sync();
             System.out.println("Login Server is running on port 8080");
-            f.channel().closeFuture().sync();
+
+            // Wait until the server socket is closed
+            future.channel().closeFuture().sync();
         } finally {
+            // Gracefully shut down the event loop groups
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
+            sessionFactory.close();
         }
     }
 }

@@ -20,19 +20,19 @@ public class WorldServerInitializer extends ChannelInitializer<SocketChannel> {
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
 
-        // Set a strict limit on frame length
-        int maxFrameLength = 10 * 1024 * 1024; // 10 MB max frame length
+        // Outbound handlers (encoders)
+        pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+        pipeline.addLast("messageEncoder", new MessageEncoder());
 
-        pipeline.addLast(new LengthFieldBasedFrameDecoder(10 * 1024 * 1024, 0, 4, 0, 4));
-        pipeline.addLast(new LengthFieldPrepender(4));
+        // Inbound handlers (decoders)
+        pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4));
+        pipeline.addLast("messageDecoder", new MessageDecoder());
 
-        // Add your custom encoder and decoder
-        pipeline.addLast(new MessageDecoder());
-        pipeline.addLast(new MessageEncoder());
+        // Business logic handler
+        pipeline.addLast("handler", new WorldServerHandler());
 
-        // Print the handlers in the pipeline for debugging purposes
+        // Debugging
         System.out.println("Current pipeline handlers: " + pipeline.names());
-
         System.out.println("Initializing channel for world: " + worldName);
     }
 }

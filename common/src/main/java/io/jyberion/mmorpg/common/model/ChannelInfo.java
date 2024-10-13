@@ -1,84 +1,129 @@
 package io.jyberion.mmorpg.common.model;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "channels")
 public class ChannelInfo {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
     private String worldName;
+
+    @Column(nullable = false)
     private String channelName;
+
+    @Column(nullable = false)
+    private String host; // Host address for the channel
+
+    @Column(nullable = false)
+    private int port; // Port for the channel
+
+    @Column(nullable = false)
     private int currentPlayers;
+
+    @Column(nullable = false)
     private int maxPlayers;
+
+    @Column(nullable = false)
     private int status; // Status to represent whether the channel is online/offline
+
+    @Column(nullable = false)
     private long lastHeartbeat; // New field for last heartbeat timestamp
 
     // Constructor for initializing basic channel information and players count
-    public ChannelInfo(String worldName, String channelName, int currentPlayers, int maxPlayers, int status) {
+    public ChannelInfo() {
+        // Default constructor needed by JPA
+    }
+
+    public ChannelInfo(String worldName, String channelName, String host, int port, int currentPlayers, int maxPlayers, int status) {
         this.worldName = worldName;
         this.channelName = channelName;
+        this.host = host;
+        this.port = port;
         this.currentPlayers = currentPlayers;
         this.maxPlayers = maxPlayers;
         this.status = status;
         this.lastHeartbeat = System.currentTimeMillis(); // Initialize heartbeat with current time
     }
 
-    // Getter for world name
+    // Getters and Setters for each field
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getWorldName() {
         return worldName;
     }
 
-    // Setter for world name
     public void setWorldName(String worldName) {
         this.worldName = worldName;
     }
 
-    // Getter for channel name
     public String getChannelName() {
         return channelName;
     }
 
-    // Setter for channel name
     public void setChannelName(String channelName) {
         this.channelName = channelName;
     }
 
-    // Getter for the current number of players in the channel
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
     public int getCurrentPlayers() {
         return currentPlayers;
     }
 
-    // Setter for the current number of players in the channel
     public void setCurrentPlayers(int currentPlayers) {
         this.currentPlayers = currentPlayers;
     }
 
-    // Getter for the maximum number of players allowed in the channel
     public int getMaxPlayers() {
         return maxPlayers;
     }
 
-    // Setter for the maximum number of players allowed in the channel
     public void setMaxPlayers(int maxPlayers) {
         this.maxPlayers = maxPlayers;
     }
 
-    // Getter for the channel's status (e.g., online/offline)
     public int getStatus() {
         return status;
     }
 
-    // Setter for the channel's status (e.g., online/offline)
     public void setStatus(int status) {
         this.status = status;
     }
 
-    // Getter for the last heartbeat timestamp
     public long getLastHeartbeat() {
         return lastHeartbeat;
     }
 
-    // Setter for the last heartbeat timestamp
     public void setLastHeartbeat(long lastHeartbeat) {
         this.lastHeartbeat = lastHeartbeat;
     }
 
-    // Method to update heartbeat to the current time
     public void updateHeartbeat() {
         this.lastHeartbeat = System.currentTimeMillis();
     }

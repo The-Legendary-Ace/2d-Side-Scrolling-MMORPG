@@ -33,3 +33,4 @@ replay_pid*
 *.crt
 *.key
 /game-client/target/
+/core-server/target/

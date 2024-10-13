@@ -74,7 +74,6 @@ dependencies {
   api "io.github.quillraven.fleks:Fleks:$fleksVersion"
   api "net.onedaybeard.artemis:artemis-odb:$artemisOdbVersion"
   api "org.apache.commons:commons-collections4:$commonsCollectionsVersion"
-  api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
   api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
   api "org.mini2Dx:universal-tween-engine:$universalTweenVersion"
   api "space.earlygrey:shapedrawer:$shapeDrawerVersion"

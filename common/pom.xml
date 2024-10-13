@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.jyberion.mmorpg</groupId>
     <artifactId>MMORPG</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.1-dev</version>
   </parent>
   <artifactId>common</artifactId>
     <dependencies>
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.68.Final</version>
+            <version>4.1.114.Final</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -54,6 +54,24 @@
                     <artifactId>jta</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.guicedee.services</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>1.0.20.2-jre15</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-all</artifactId>
+            <version>5.5.1</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

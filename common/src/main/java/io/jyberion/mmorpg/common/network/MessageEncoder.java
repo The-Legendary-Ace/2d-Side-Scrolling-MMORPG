@@ -1,39 +1,36 @@
 package io.jyberion.mmorpg.common.network;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jyberion.mmorpg.common.message.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jyberion.mmorpg.common.message.Message;
 
-public class MessageEncoder extends MessageToByteEncoder<Message> {
+public class MessageEncoder extends MessageToByteEncoder<Object> {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    public MessageEncoder() {
+        super();
+    }
+
     @Override
-    protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-        try {
-            // Check if the message is null
-            if (msg == null) {
-                System.err.println("Message is null. Skipping encoding.");
-                return;
-            }
+    public boolean acceptOutboundMessage(Object msg) {
+        boolean accept = msg instanceof Message;
+        System.out.println("MessageEncoder acceptOutboundMessage called with msg type: " + msg.getClass().getName() + ", accept: " + accept);
+        System.out.println("Message interface classloader: " + Message.class.getClassLoader());
+        System.out.println("msg classloader: " + msg.getClass().getClassLoader());
+        return accept;
+    }
 
-            // Show the message before encoding
-            System.out.println("Encoding message: " + msg);
-
-            // Serialize the message to JSON
+    @Override
+    protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+        System.out.println("MessageEncoder encode called with msg type: " + msg.getClass().getName());
+        if (msg instanceof Message) {
+            System.out.println("Encoding message: " + msg.getClass().getSimpleName());
             byte[] data = objectMapper.writeValueAsBytes(msg);
-            int length = data.length;
-
-            // Write the length of the data and then the data itself
-            out.writeInt(length);
             out.writeBytes(data);
-
-            System.out.println("Encoded message with length: " + length);
-        } catch (Exception e) {
-            System.err.println("Error during encoding: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+        } else {
+            throw new IllegalArgumentException("Unsupported message type: " + msg.getClass());
         }
     }
 }

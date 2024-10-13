@@ -11,7 +11,6 @@ public class ChannelHeartbeatMessage implements Message, Serializable {
         this.channelName = channelName;
     }
 
-    @Override
     public MessageType getType() {
         return MessageType.CHANNEL_HEARTBEAT;
     }

@@ -1,27 +1,36 @@
 package io.jyberion.mmorpg.common.message;
 
-import io.jyberion.mmorpg.common.model.ChannelInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 
 public class ChannelRegistrationMessage implements Message, Serializable {
-    private ChannelInfo channelInfo;
+    private String channelName;
+    private String host;
+    private int port;
 
+    // No-argument constructor for serialization
     public ChannelRegistrationMessage() {}
 
-    public ChannelRegistrationMessage(ChannelInfo channelInfo) {
-        this.channelInfo = channelInfo;
+    public ChannelRegistrationMessage(String channelName, String host, int port) {
+        this.channelName = channelName;
+        this.host = host;
+        this.port = port;
     }
 
-    @Override
+    public String getChannelName() {
+        return channelName;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+    
+    @JsonIgnore
     public MessageType getType() {
         return MessageType.CHANNEL_REGISTRATION;
-    }
-
-    public ChannelInfo getChannelInfo() {
-        return channelInfo;
-    }
-
-    public void setChannelInfo(ChannelInfo channelInfo) {
-        this.channelInfo = channelInfo;
     }
 }
