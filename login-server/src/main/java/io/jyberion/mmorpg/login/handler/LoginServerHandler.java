@@ -28,12 +28,17 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+
 public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequestMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginServerHandler.class);
     private final UserService userService = new UserService();
+    private final SessionFactory sessionFactory;
 
-    public LoginServerHandler() {
+    public LoginServerHandler(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;  // Inject sessionFactory
     }
 
     @Override
@@ -132,8 +137,8 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
                             pipeline.addLast(new SimpleChannelInboundHandler<AvailableChannelsResponseMessage>() {
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext ctx, AvailableChannelsResponseMessage msg) {
-                                    if (msg.getAvailableChannels() != null && !msg.getAvailableChannels().isEmpty()) {
-                                        future.complete(msg.getAvailableChannels().get(0));
+                                    if (msg.getChannels() != null && !msg.getChannels().isEmpty()) {
+                                        future.complete(msg.getChannels().get(0));
                                     } else {
                                         future.complete(null);
                                     }
@@ -162,20 +167,18 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
     }
 
     private List<WorldInfo> getAvailableWorldServers() {
-        List<WorldInfo> worldServers = new ArrayList<>();
-
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = sessionFactory.openSession()) {  // Use sessionFactory
             session.beginTransaction();
 
-            // Query the WorldInfo entity from the database
-            worldServers = session.createQuery("FROM WorldInfo", WorldInfo.class).list();
+            // Query the world servers from the DB
+            List<WorldInfo> worldServers = session.createQuery("FROM WorldInfo", WorldInfo.class).list();
 
             session.getTransaction().commit();
+            return worldServers;
         } catch (PersistenceException e) {
-            logger.error("Failed to retrieve world servers from database", e);
+            logger.error("Error retrieving world servers from the database", e);
+            return Collections.emptyList();
         }
-
-        return worldServers;
     }
 
 

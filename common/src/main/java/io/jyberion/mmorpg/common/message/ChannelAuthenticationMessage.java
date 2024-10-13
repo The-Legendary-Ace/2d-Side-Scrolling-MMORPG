@@ -11,6 +11,7 @@ public class ChannelAuthenticationMessage implements Message, Serializable {
         this.token = token;
     }
 
+    @Override
     public MessageType getType() {
         return MessageType.CHANNEL_AUTHENTICATION;
     }

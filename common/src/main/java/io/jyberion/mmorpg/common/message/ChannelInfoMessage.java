@@ -1,13 +1,11 @@
 package io.jyberion.mmorpg.common.message;
 
-import io.jyberion.mmorpg.common.model.ChannelInfo;
-
 import java.io.Serializable;
 
 public class ChannelInfoMessage implements Message, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String worldName;
+    private String worldId;  // Corrected from worldid
     private String channelName;
     private int currentPlayers;
     private int maxPlayers;
@@ -17,8 +15,8 @@ public class ChannelInfoMessage implements Message, Serializable {
     public ChannelInfoMessage() {
     }
 
-    public ChannelInfoMessage(String worldName, String channelName, int currentPlayers, int maxPlayers, int status) {
-        this.worldName = worldName;
+    public ChannelInfoMessage(String worldId, String channelName, int currentPlayers, int maxPlayers, int status) {
+        this.worldId = worldId;
         this.channelName = channelName;
         this.currentPlayers = currentPlayers;
         this.maxPlayers = maxPlayers;
@@ -26,12 +24,12 @@ public class ChannelInfoMessage implements Message, Serializable {
     }
 
     // Getters and Setters
-    public String getWorldName() {
-        return worldName;
+    public String getWorldId() {
+        return worldId;
     }
 
-    public void setWorldName(String worldName) {
-        this.worldName = worldName;
+    public void setWorldId(String worldId) {  // Corrected setter name
+        this.worldId = worldId;
     }
 
     public String getChannelName() {
