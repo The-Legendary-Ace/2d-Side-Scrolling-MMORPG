@@ -24,12 +24,14 @@ public class ChannelServer {
     private final ChannelInfo channelInfo;
     private final String worldServerHost;
     private final int worldServerPort;
+    private final String worldId; // Add worldId
 
-    public ChannelServer(int port, ChannelInfo channelInfo, String worldServerHost, int worldServerPort) {
+    public ChannelServer(int port, ChannelInfo channelInfo, String worldServerHost, int worldServerPort, String worldId) {
         this.port = port;
         this.channelInfo = channelInfo;
         this.worldServerHost = worldServerHost;
         this.worldServerPort = worldServerPort;
+        this.worldId = worldId; // Initialize worldId
     }
 
     public void start() throws InterruptedException {
@@ -73,7 +75,7 @@ public class ChannelServer {
                      pipeline.addLast(new LengthFieldPrepender(4));
                      pipeline.addLast(new MessageDecoder());
                      pipeline.addLast(new MessageEncoder());
-                     pipeline.addLast(new ChannelRegistrationHandler(channelInfo));
+                     pipeline.addLast(new ChannelRegistrationHandler(channelInfo, worldId)); // Pass worldId here
                  }
              });
 
@@ -106,9 +108,10 @@ public class ChannelServer {
             String channelMaxPlayersStr = ConfigLoader.get("channel.maxPlayers");
             String worldServerHost = ConfigLoader.get("world.server.host");
             String worldServerPortStr = ConfigLoader.get("world.server.port");
+            String worldId = ConfigLoader.get("world.id"); // Add worldId
 
             // Validate and parse the configuration values
-            if (channelName == null || channelAddress == null || channelPortStr == null || channelMaxPlayersStr == null || worldServerHost == null || worldServerPortStr == null) {
+            if (channelName == null || channelAddress == null || channelPortStr == null || channelMaxPlayersStr == null || worldServerHost == null || worldServerPortStr == null || worldId == null) {
                 throw new IllegalArgumentException("Missing required configuration properties");
             }
 
@@ -117,7 +120,7 @@ public class ChannelServer {
             int worldServerPort = Integer.parseInt(worldServerPortStr);
 
             ChannelInfo channelInfo = new ChannelInfo(
-                    "Kili", // Example world name, replace with actual value
+                    worldId, // Pass worldId here
                     channelName,
                     channelAddress,
                     channelPort,
@@ -127,7 +130,7 @@ public class ChannelServer {
             );
 
             // Start the Channel Server
-            new ChannelServer(channelPort, channelInfo, worldServerHost, worldServerPort).start();
+            new ChannelServer(channelPort, channelInfo, worldServerHost, worldServerPort, worldId).start(); // Pass worldId
 
         } catch (InterruptedException e) {
             e.printStackTrace();

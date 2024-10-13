@@ -10,10 +10,11 @@ public class ChannelRegistrationMessage implements Message, Serializable {
     private String host;
     private int port;
 
-    // Constructors
+    // No-argument constructor for deserialization
     public ChannelRegistrationMessage() {
     }
 
+    // Constructor with four arguments
     public ChannelRegistrationMessage(String worldId, String channelName, String host, int port) {
         this.worldId = worldId;
         this.channelName = channelName;

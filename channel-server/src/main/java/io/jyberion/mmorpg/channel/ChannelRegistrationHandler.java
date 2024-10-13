@@ -12,9 +12,11 @@ public class ChannelRegistrationHandler extends SimpleChannelInboundHandler<Obje
 
     private static final Logger logger = LoggerFactory.getLogger(ChannelRegistrationHandler.class);
     private final ChannelInfo channelInfo;
+    private final String worldId; // Add worldId to pass in the message
 
-    public ChannelRegistrationHandler(ChannelInfo channelInfo) {
+    public ChannelRegistrationHandler(ChannelInfo channelInfo, String worldId) { // Pass worldId as a parameter
         this.channelInfo = channelInfo;
+        this.worldId = worldId;
     }
 
     @Override
@@ -24,6 +26,7 @@ public class ChannelRegistrationHandler extends SimpleChannelInboundHandler<Obje
 
         // Convert ChannelInfo to a ChannelRegistrationMessage to properly encode
         ChannelRegistrationMessage registrationMessage = new ChannelRegistrationMessage(
+                worldId, // Provide the worldId here
                 channelInfo.getChannelName(),
                 channelInfo.getHost(),
                 channelInfo.getPort()

@@ -15,11 +15,13 @@ public class ChannelRegistrationClient {
     private final String worldServerHost;
     private final int worldServerPort;
     private final ChannelInfo channelInfo;
+    private final String worldId; // Add worldId
 
-    public ChannelRegistrationClient(String worldServerHost, int worldServerPort, ChannelInfo channelInfo) {
+    public ChannelRegistrationClient(String worldServerHost, int worldServerPort, ChannelInfo channelInfo, String worldId) { // Pass worldId
         this.worldServerHost = worldServerHost;
         this.worldServerPort = worldServerPort;
         this.channelInfo = channelInfo;
+        this.worldId = worldId; // Initialize worldId
     }
 
     public void register() throws InterruptedException {
@@ -33,7 +35,8 @@ public class ChannelRegistrationClient {
                         @Override
                         public void initChannel(SocketChannel ch) {
                             logger.debug("Initializing ChannelRegistrationHandler pipeline...");
-                            ch.pipeline().addLast(new ChannelRegistrationHandler(channelInfo));
+                            // Pass both channelInfo and worldId
+                            ch.pipeline().addLast(new ChannelRegistrationHandler(channelInfo, worldId)); 
                         }
                     });
 
