@@ -19,5 +19,18 @@
 
         <!-- Echo all executed SQL to stdout -->
         <property name="hibernate.show_sql">true</property>
+
+        <!-- Automatically update the database schema -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+
+        <!-- Specify how Hibernate should handle the connection pool -->
+        <property name="hibernate.c3p0.acquire_increment">1</property>
+        <property name="hibernate.c3p0.timeout">1800</property>
+        <property name="hibernate.c3p0.max_statements">50</property>
+
+        <!-- Entity Mappings -->
+        <mapping class="io.jyberion.mmorpg.common.model.WorldInfo"/>
+        <mapping class="io.jyberion.mmorpg.common.model.ChannelInfo"/>
+
     </session-factory>
 </hibernate-configuration>

@@ -89,7 +89,7 @@ public class LoginScreen implements Screen {
                 messageLabel.setText("Login successful!");
                 
                 // Proceed to the next screen (e.g., world and channel selection)
-                game.setScreen(new LobbyScreen(game, response.getToken(), response.getChannels()));
+                game.setScreen(new LobbyScreen(game, response.getToken(), response.getWorlds()));
             } else {
                 // Check if the account is banned
                 if (response.getMessage().equalsIgnoreCase("banned")) {

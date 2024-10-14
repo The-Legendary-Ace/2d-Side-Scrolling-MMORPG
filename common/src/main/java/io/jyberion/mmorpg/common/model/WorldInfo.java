@@ -1,6 +1,9 @@
 package io.jyberion.mmorpg.common.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 @Entity
@@ -11,12 +14,15 @@ public class WorldInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @NotEmpty(message = "World name cannot be empty")
+    @Column(nullable = false, unique = true)
     private String worldName;
 
+    @NotEmpty(message = "Host cannot be empty")
     @Column(nullable = false)
     private String host;
 
+    @Positive(message = "Port must be a positive integer")
     @Column(nullable = false)
     private int port;
 
@@ -24,12 +30,12 @@ public class WorldInfo {
     @JoinColumn(name = "world_id")
     private List<ChannelInfo> channels;
 
-    // No-argument constructor needed for JPA
+    // No-argument constructor for JPA
     public WorldInfo() {
     }
 
-    // Constructor for initializing WorldInfo with worldName, host, and port
-    public WorldInfo(String worldName, String host, int port, List<ChannelInfo> channels) {
+    // Constructor for initializing WorldInfo with worldName, host, port, and channels
+    public WorldInfo(@NotEmpty String worldName, @NotEmpty String host, @Positive int port, List<ChannelInfo> channels) {
         this.worldName = worldName;
         this.host = host;
         this.port = port;
@@ -75,5 +81,16 @@ public class WorldInfo {
 
     public void setChannels(List<ChannelInfo> channels) {
         this.channels = channels;
+    }
+
+    @Override
+    public String toString() {
+        return "WorldInfo{" +
+                "id=" + id +
+                ", worldName='" + worldName + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", channels=" + channels +
+                '}';
     }
 }

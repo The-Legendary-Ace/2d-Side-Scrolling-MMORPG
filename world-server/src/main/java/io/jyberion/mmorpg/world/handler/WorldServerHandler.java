@@ -1,50 +1,70 @@
 package io.jyberion.mmorpg.world.handler;
 
-import io.jyberion.mmorpg.common.message.ChannelRegistrationMessage;
-import io.jyberion.mmorpg.common.message.ChannelRegistrationResponse;
-import io.jyberion.mmorpg.common.message.Message;
+import io.jyberion.mmorpg.common.message.*;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.jyberion.mmorpg.common.model.ChannelStatus;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class WorldServerHandler extends SimpleChannelInboundHandler<Message> {
 
     private static final Logger logger = LoggerFactory.getLogger(WorldServerHandler.class);
 
-    // List of registered channels
-    private List<ChannelInfo> registeredChannels;
+    // Make registeredChannels static so it's shared across all instances
+    private static List<ChannelInfo> registeredChannels = new ArrayList<>();
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+        logger.debug("Received message of type: " + msg.getClass().getSimpleName());
+
         if (msg instanceof ChannelRegistrationMessage) {
+            logger.debug("Handling ChannelRegistrationMessage...");
             handleChannelRegistration(ctx, (ChannelRegistrationMessage) msg);
+        } else if (msg instanceof GetAvailableChannelsMessage) {
+            logger.debug("Handling GetAvailableChannelsMessage...");
+            handleGetAvailableChannels(ctx);  // Handle available channels request
         } else {
             logger.warn("Received unexpected message type: {}", msg.getClass().getSimpleName());
         }
     }
 
     private void handleChannelRegistration(ChannelHandlerContext ctx, ChannelRegistrationMessage registrationMessage) {
-        logger.info("Received channel registration message from: {}", registrationMessage.getChannelName());
+        logger.info("Received channel registration request from channel: {}", registrationMessage.getChannelName());
 
         if (isValidMessage(registrationMessage)) {
-            logger.info("Connecting to the channel server: {} at {}:{} to fetch additional details...",
-                    registrationMessage.getChannelName(), registrationMessage.getHost(), registrationMessage.getPort());
+            String channelName = registrationMessage.getChannelName();
+            String host = registrationMessage.getHost();
+            int port = registrationMessage.getPort();
+            int currentPlayers = registrationMessage.getCurrentPlayers();
+            int maxPlayers = registrationMessage.getMaxPlayers();
+            String status = registrationMessage.getStatus();
 
-            try {
-                // Establish connection with the channel server to fetch additional info
-                fetchChannelDetailsFromServer(registrationMessage, ctx);
-            } catch (Exception e) {
-                logger.error("Failed to register channel {} due to error", registrationMessage.getChannelName(), e);
-                ChannelRegistrationResponse response = new ChannelRegistrationResponse(false, "Registration failed due to internal error.");
-                ctx.writeAndFlush(response);
-            }
+            logger.info("Channel {} is on host {}, port {} with players {}/{} and status: {}", 
+                channelName, host, port, currentPlayers, maxPlayers, status);
+
+            // Create a ChannelInfo object with the received registration details
+            ChannelInfo channelInfo = new ChannelInfo(
+                registrationMessage.getWorldId(),
+                channelName,
+                host,
+                port,
+                currentPlayers,
+                maxPlayers,
+                ChannelStatus.valueOf(status)
+            );
+            registeredChannels.add(channelInfo);  // Registering the channel
+
+            // Log registered channels
+            logger.debug("Current registered channels: {}", registeredChannels);
+
+            // Send registration response
+            ChannelRegistrationResponse response = new ChannelRegistrationResponse(true, "Registration successful.");
+            ctx.writeAndFlush(response);
         } else {
             logger.error("Invalid channel registration message received: {}", registrationMessage);
             ChannelRegistrationResponse response = new ChannelRegistrationResponse(false, "Invalid channel registration details.");
@@ -52,41 +72,35 @@ public class WorldServerHandler extends SimpleChannelInboundHandler<Message> {
         }
     }
 
-    private void fetchChannelDetailsFromServer(ChannelRegistrationMessage registrationMessage, ChannelHandlerContext ctx) {
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
+    private void handleGetAvailableChannels(ChannelHandlerContext ctx) {
+        logger.info("Received request for available channels.");
 
-        try {
-            Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(workerGroup)
-                     .channel(NioSocketChannel.class)
-                     .option(ChannelOption.SO_KEEPALIVE, true)
-                     .handler(new ChannelInitializer<Channel>() {
-                         @Override
-                         protected void initChannel(Channel ch) throws Exception {
-                             ch.pipeline().addLast(new ChannelDetailsClientHandler(ctx, registrationMessage));
-                         }
-                     });
-
-            // Connect to the channel server (host and port provided in registrationMessage)
-            ChannelFuture future = bootstrap.connect(registrationMessage.getHost(), registrationMessage.getPort()).sync();
-            future.channel().closeFuture().sync();
-
-        } catch (InterruptedException e) {
-            logger.error("Error connecting to the channel server for: {}", registrationMessage.getChannelName(), e);
-        } finally {
-            workerGroup.shutdownGracefully();
+        if (registeredChannels == null || registeredChannels.isEmpty()) {
+            logger.info("No channels are currently registered.");
+        } else {
+            logger.debug("Available channels: " + registeredChannels.size());
         }
+
+        // Respond with the list of registered channels
+        AvailableChannelsResponseMessage response = new AvailableChannelsResponseMessage(registeredChannels);
+        ctx.writeAndFlush(response);
     }
 
     private boolean isValidMessage(ChannelRegistrationMessage msg) {
-        return msg.getChannelName() != null && !msg.getChannelName().isEmpty()
+        logger.debug("Validating ChannelRegistrationMessage...");
+        boolean valid = msg.getChannelName() != null && !msg.getChannelName().isEmpty()
                 && msg.getHost() != null && !msg.getHost().isEmpty()
-                && msg.getPort() > 0;
+                && msg.getPort() > 0
+                && msg.getCurrentPlayers() >= 0
+                && msg.getMaxPlayers() >= 0
+                && msg.getStatus() != null;
+        logger.debug("Message validation result: {}", valid);
+        return valid;
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error("Exception in WorldServerHandler", cause);
+        logger.error("Exception caught in WorldServerHandler", cause);
         ctx.close();
     }
 }

@@ -15,7 +15,7 @@ public class LoginResponseMessage implements Message {
     private boolean success;
     private String token;
     private String message;
-    private List<ChannelInfo> channels;
+    private List<WorldWithChannels> worlds; // Add this field to store the world data
     private boolean banned;
     private String banReason;
 
@@ -25,23 +25,28 @@ public class LoginResponseMessage implements Message {
 
     @JsonCreator
     public LoginResponseMessage(
-            @JsonProperty("type") String type,  // Adding type to the constructor
+            @JsonProperty("type") String type,
             @JsonProperty("success") boolean success,
             @JsonProperty("token") String token,
             @JsonProperty("message") String message,
-            @JsonProperty("channels") List<ChannelInfo> channels,
+            @JsonProperty("worlds") List<WorldWithChannels> worlds, // Adjusted field to include worlds
             @JsonProperty("banned") boolean banned,
             @JsonProperty("banReason") String banReason) {
         this.type = type;
         this.success = success;
         this.token = token;
         this.message = message;
-        this.channels = channels;
+        this.worlds = worlds;
         this.banned = banned;
         this.banReason = banReason;
     }
 
-    // Getters and setters
+    // Add a getter method for worlds
+    public List<WorldWithChannels> getWorlds() {
+        return worlds;
+    }
+
+    // Other getters and setters remain the same
     @Override
     public MessageType getType() {
         return MessageType.LOGIN_RESPONSE;
@@ -71,14 +76,6 @@ public class LoginResponseMessage implements Message {
         this.message = message;
     }
 
-    public List<ChannelInfo> getChannels() {
-        return channels;
-    }
-
-    public void setChannels(List<ChannelInfo> channels) {
-        this.channels = channels;
-    }
-
     public boolean isBanned() {
         return banned;
     }
@@ -93,5 +90,36 @@ public class LoginResponseMessage implements Message {
 
     public void setBanReason(String banReason) {
         this.banReason = banReason;
+    }
+
+    // Nested class to represent a world and its channels
+    public static class WorldWithChannels {
+        private String worldName;
+        private List<ChannelInfo> channels;
+
+        public WorldWithChannels() {
+            // No-argument constructor for Jackson
+        }
+
+        public WorldWithChannels(String worldName, List<ChannelInfo> channels) {
+            this.worldName = worldName;
+            this.channels = channels;
+        }
+
+        public String getWorldName() {
+            return worldName;
+        }
+
+        public void setWorldName(String worldName) {
+            this.worldName = worldName;
+        }
+
+        public List<ChannelInfo> getChannels() {
+            return channels;
+        }
+
+        public void setChannels(List<ChannelInfo> channels) {
+            this.channels = channels;
+        }
     }
 }

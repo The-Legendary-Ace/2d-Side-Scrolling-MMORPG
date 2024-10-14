@@ -9,8 +9,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = LoginRequestMessage.class, name = "LOGIN_REQUEST"),
     @JsonSubTypes.Type(value = LoginResponseMessage.class, name = "LOGIN_RESPONSE"),
     @JsonSubTypes.Type(value = ChannelRegistrationMessage.class, name = "CHANNEL_REGISTRATION"),
-    @JsonSubTypes.Type(value = ChannelRegistrationResponse.class, name = "CHANNEL_REGISTRATION_RESPONSE")
-    // Add other message types as needed
+    @JsonSubTypes.Type(value = ChannelRegistrationResponse.class, name = "CHANNEL_REGISTRATION_RESPONSE"),
+    @JsonSubTypes.Type(value = GetAvailableChannelsMessage.class, name = "GET_AVAILABLE_CHANNELS"), // Add this
+    @JsonSubTypes.Type(value = AvailableChannelsResponseMessage.class, name = "AVAILABLE_CHANNELS_RESPONSE")
 })
 public interface Message {
     @JsonIgnore

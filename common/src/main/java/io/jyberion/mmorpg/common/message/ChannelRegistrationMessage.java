@@ -9,50 +9,56 @@ public class ChannelRegistrationMessage implements Message, Serializable {
     private String channelName;
     private String host;
     private int port;
+    private int currentPlayers;
+    private int maxPlayers;
+    private String status;
 
     // No-argument constructor for deserialization
     public ChannelRegistrationMessage() {
+        System.out.println("ChannelRegistrationMessage: Default constructor called for deserialization.");
     }
 
-    // Constructor with four arguments
-    public ChannelRegistrationMessage(String worldId, String channelName, String host, int port) {
+    // Constructor with additional fields
+    public ChannelRegistrationMessage(String worldId, String channelName, String host, int port, int currentPlayers, int maxPlayers, String status) {
         this.worldId = worldId;
         this.channelName = channelName;
         this.host = host;
         this.port = port;
+        this.currentPlayers = currentPlayers;
+        this.maxPlayers = maxPlayers;
+        this.status = status;
+        System.out.println("ChannelRegistrationMessage: Initialized with worldId=" + worldId +
+                ", channelName=" + channelName + ", host=" + host + ", port=" + port +
+                ", currentPlayers=" + currentPlayers + ", maxPlayers=" + maxPlayers + ", status=" + status);
     }
 
-    // Getters and Setters
+    // Getters for all fields
     public String getWorldId() {
         return worldId;
-    }
-
-    public void setWorldId(String worldId) {
-        this.worldId = worldId;
     }
 
     public String getChannelName() {
         return channelName;
     }
 
-    public void setChannelName(String channelName) {
-        this.channelName = channelName;
-    }
-
     public String getHost() {
         return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
     }
 
     public int getPort() {
         return port;
     }
 
-    public void setPort(int port) {
-        this.port = port;
+    public int getCurrentPlayers() {
+        return currentPlayers;
+    }
+
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     @Override

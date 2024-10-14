@@ -3,6 +3,7 @@ package io.jyberion.mmorpg.world;
 import io.jyberion.mmorpg.common.message.ChannelAvailabilityRequest;
 import io.jyberion.mmorpg.common.message.ChannelAvailabilityResponse;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
+import io.jyberion.mmorpg.common.model.ChannelStatus;
 
 import javax.jms.*;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class WorldServerChannelListener implements MessageListener {
     private List<ChannelInfo> getAvailableChannels() {
         List<ChannelInfo> availableChannels = new ArrayList<>();
         for (ChannelInfo channelInfo : connectedChannels.values()) {
-            if (channelInfo.getStatus() == 1) { // Only add online channels
+            if (channelInfo.getStatus() == ChannelStatus.ONLINE) { // Only add online channels
                 availableChannels.add(channelInfo);
             }
         }
@@ -67,7 +68,7 @@ public class WorldServerChannelListener implements MessageListener {
     }
 
     // Method to update the status of a channel (e.g., set it to offline)
-    public void updateChannelStatus(String channelName, int status) {
+    public void updateChannelStatus(String channelName, ChannelStatus status) {
         ChannelInfo channelInfo = connectedChannels.get(channelName);
         if (channelInfo != null) {
             channelInfo.setStatus(status);

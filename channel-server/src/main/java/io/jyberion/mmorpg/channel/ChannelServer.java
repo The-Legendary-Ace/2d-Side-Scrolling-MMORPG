@@ -2,6 +2,7 @@ package io.jyberion.mmorpg.channel;
 
 import io.jyberion.mmorpg.common.config.ConfigLoader;
 import io.jyberion.mmorpg.common.model.ChannelInfo;
+import io.jyberion.mmorpg.common.model.ChannelStatus; // Import the ChannelStatus enum
 import io.jyberion.mmorpg.common.network.MessageDecoder;
 import io.jyberion.mmorpg.common.network.MessageEncoder;
 import io.netty.bootstrap.Bootstrap;
@@ -75,7 +76,15 @@ public class ChannelServer {
                      pipeline.addLast(new LengthFieldPrepender(4));
                      pipeline.addLast(new MessageDecoder());
                      pipeline.addLast(new MessageEncoder());
-                     pipeline.addLast(new ChannelRegistrationHandler(channelInfo, worldId)); // Pass worldId here
+                     pipeline.addLast(new ChannelRegistrationHandler(
+                             worldId, 
+                             channelInfo.getChannelName(),
+                             channelInfo.getHost(),
+                             channelInfo.getPort(),
+                             channelInfo.getCurrentPlayers(),
+                             channelInfo.getMaxPlayers(),
+                             channelInfo.getStatus().name()  // Assuming status is an enum
+                     ));
                  }
              });
 
@@ -126,7 +135,7 @@ public class ChannelServer {
                     channelPort,
                     0,
                     channelMaxPlayers,
-                    1 // Assuming 1 represents 'online' status for the channel
+                    ChannelStatus.ONLINE // Enum status
             );
 
             // Start the Channel Server

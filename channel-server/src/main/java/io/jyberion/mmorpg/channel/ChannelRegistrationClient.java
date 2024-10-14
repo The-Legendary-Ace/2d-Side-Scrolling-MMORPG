@@ -29,16 +29,23 @@ public class ChannelRegistrationClient {
         try {
             Bootstrap b = new Bootstrap();
             b.group(group)
-                    .channel(NioSocketChannel.class)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel ch) {
-                            logger.debug("Initializing ChannelRegistrationHandler pipeline...");
-                            // Pass both channelInfo and worldId
-                            ch.pipeline().addLast(new ChannelRegistrationHandler(channelInfo, worldId)); 
-                        }
-                    });
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) {
+                        logger.debug("Initializing ChannelRegistrationHandler pipeline...");
+                        ch.pipeline().addLast(new ChannelRegistrationHandler(
+                            channelInfo.getWorldName(),      // Pass individual fields
+                            channelInfo.getChannelName(),    // Pass channel name
+                            channelInfo.getHost(),           // Pass host
+                            channelInfo.getPort(),           // Pass port
+                            channelInfo.getCurrentPlayers(), // Pass current players
+                            channelInfo.getMaxPlayers(),     // Pass max players
+                            channelInfo.getStatus().name()   // Convert status enum to string
+                        ));
+                    }
+                });
 
             logger.info("Connecting to world server at {}:{}", worldServerHost, worldServerPort);
             ChannelFuture f = b.connect(worldServerHost, worldServerPort).sync();

@@ -4,31 +4,34 @@ import io.jyberion.mmorpg.common.model.ChannelInfo;
 import java.util.List;
 
 public class AvailableChannelsResponseMessage implements Message {
-    private static final long serialVersionUID = 1L;
 
     private List<ChannelInfo> channels;
+    private MessageType messageType;
 
-    // No-argument constructor for deserialization
+    // No-argument constructor required for Jackson deserialization
     public AvailableChannelsResponseMessage() {
+        this.messageType = MessageType.AVAILABLE_CHANNELS_RESPONSE;
     }
 
-    // Constructor to initialize the message with available channels
+    // Constructor to initialize with list of channels
     public AvailableChannelsResponseMessage(List<ChannelInfo> channels) {
         this.channels = channels;
+        this.messageType = MessageType.AVAILABLE_CHANNELS_RESPONSE;
     }
 
-    // Getter for the channels list
+    // Implement the required method from the Message interface
+    @Override
+    public MessageType getType() {
+        return messageType;
+    }
+
+    // Getter for channels
     public List<ChannelInfo> getChannels() {
         return channels;
     }
 
-    // Setter for the channels list (optional, if needed)
+    // Setter for channels
     public void setChannels(List<ChannelInfo> channels) {
         this.channels = channels;
-    }
-
-    @Override
-    public MessageType getType() {
-        return MessageType.AVAILABLE_CHANNELS_RESPONSE;
     }
 }

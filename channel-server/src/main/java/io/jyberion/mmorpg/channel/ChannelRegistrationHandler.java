@@ -2,7 +2,6 @@ package io.jyberion.mmorpg.channel;
 
 import io.jyberion.mmorpg.common.message.ChannelRegistrationMessage;
 import io.jyberion.mmorpg.common.message.ChannelRegistrationResponse;
-import io.jyberion.mmorpg.common.model.ChannelInfo;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
@@ -11,28 +10,34 @@ import org.slf4j.LoggerFactory;
 public class ChannelRegistrationHandler extends SimpleChannelInboundHandler<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(ChannelRegistrationHandler.class);
-    private final ChannelInfo channelInfo;
-    private final String worldId; // Add worldId to pass in the message
+    private final String worldId;
+    private final String channelName;
+    private final String host;
+    private final int port;
+    private final int currentPlayers;  // New field for current players
+    private final int maxPlayers;      // New field for max players
+    private final String status;       // New field for channel status
 
-    public ChannelRegistrationHandler(ChannelInfo channelInfo, String worldId) { // Pass worldId as a parameter
-        this.channelInfo = channelInfo;
+    public ChannelRegistrationHandler(String worldId, String channelName, String host, int port, int currentPlayers, int maxPlayers, String status) {
         this.worldId = worldId;
+        this.channelName = channelName;
+        this.host = host;
+        this.port = port;
+        this.currentPlayers = currentPlayers;
+        this.maxPlayers = maxPlayers;
+        this.status = status;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         logger.info("Channel active, registering channel to World Server...");
-        logger.debug("Channel information: {}", channelInfo);
 
-        // Convert ChannelInfo to a ChannelRegistrationMessage to properly encode
+        // Construct ChannelRegistrationMessage with all required parameters
         ChannelRegistrationMessage registrationMessage = new ChannelRegistrationMessage(
-                worldId, // Provide the worldId here
-                channelInfo.getChannelName(),
-                channelInfo.getHost(),
-                channelInfo.getPort()
+                worldId, channelName, host, port, currentPlayers, maxPlayers, status
         );
 
-        // Send the serialized registration message
+        // Send the registration message to the World Server
         ctx.writeAndFlush(registrationMessage);
     }
 

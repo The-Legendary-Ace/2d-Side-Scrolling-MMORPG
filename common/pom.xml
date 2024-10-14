@@ -73,5 +73,11 @@
             <version>5.5.1</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>com.guicedee.services</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>1.0.20.2-jre15</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 </project>

@@ -20,7 +20,6 @@ import io.netty.handler.codec.LengthFieldPrepender;
 
 import javax.persistence.PersistenceException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +43,6 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, LoginRequestMessage msg) {
         logger.info("Received login request for username: {}", msg.getUsername());
-        System.out.println("Received login request from client: " + msg.getUsername());
 
         String username = msg.getUsername();
         String password = msg.getPassword();
@@ -64,28 +62,20 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
                     String sessionId = UUID.randomUUID().toString();
                     logger.info("Generated session ID for username {}: {}", username, sessionId);
 
-                    List<ChannelInfo> channels = getAvailableChannelsFromWorldServer();
+                    // Get the channels and world name
+                    List<LoginResponseMessage.WorldWithChannels> worldsWithChannels = getWorldsAndChannelsFromWorldServers();
 
-                    if (channels == null || channels.isEmpty()) {
-                        logger.error("No channels available for the world server.");
+                    if (worldsWithChannels == null || worldsWithChannels.isEmpty()) {
+                        logger.error("No channels available for any world server.");
                         response = new LoginResponseMessage(
                                 "LOGIN_RESPONSE", false, null, "No channels available. Please try again later.", null, false, null
                         );
                     } else {
-                        ChannelInfo selectedChannel = channels.get(0);
-                        boolean playerCreated = createPlayerOnWorldServer(username, selectedChannel);
-
-                        if (playerCreated) {
-                            logger.info("Player {} created successfully on channel server.", username);
-                            response = new LoginResponseMessage(
-                                    "LOGIN_RESPONSE", true, sessionId, "Login successful", channels, false, null
-                            );
-                        } else {
-                            logger.error("Failed to create player {} on channel server.", username);
-                            response = new LoginResponseMessage(
-                                    "LOGIN_RESPONSE", false, null, "Player creation failed. Please try again.", null, false, null
-                            );
-                        }
+                        // Send back the world and channel data to the client
+                        logger.info("Returning worlds and channels data for login");
+                        response = new LoginResponseMessage(
+                                "LOGIN_RESPONSE", true, sessionId, "Login successful", worldsWithChannels, false, null
+                        );
                     }
                 }
             } else {
@@ -118,8 +108,9 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
         ctx.close();
     }
 
-    private CompletableFuture<ChannelInfo> communicateWithWorldServer(WorldInfo worldInfo) {
-        CompletableFuture<ChannelInfo> future = new CompletableFuture<>();
+    // Communicate with the world servers to retrieve available channels
+    private CompletableFuture<List<ChannelInfo>> communicateWithWorldServer(WorldInfo worldInfo) {
+        CompletableFuture<List<ChannelInfo>> future = new CompletableFuture<>();
         NioEventLoopGroup group = new NioEventLoopGroup();
 
         try {
@@ -137,11 +128,7 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
                             pipeline.addLast(new SimpleChannelInboundHandler<AvailableChannelsResponseMessage>() {
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext ctx, AvailableChannelsResponseMessage msg) {
-                                    if (msg.getChannels() != null && !msg.getChannels().isEmpty()) {
-                                        future.complete(msg.getChannels().get(0));
-                                    } else {
-                                        future.complete(null);
-                                    }
+                                    future.complete(msg.getChannels());
                                     ctx.close();
                                 }
 
@@ -158,6 +145,7 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
             channelFuture.channel().writeAndFlush(new GetAvailableChannelsMessage());
             channelFuture.channel().closeFuture().sync();
         } catch (Exception e) {
+            logger.error("Error communicating with World Server: {}", worldInfo.getWorldName(), e);
             future.completeExceptionally(e);
         } finally {
             group.shutdownGracefully();
@@ -166,42 +154,46 @@ public class LoginServerHandler extends SimpleChannelInboundHandler<LoginRequest
         return future;
     }
 
+    // Retrieve the list of available worlds and their channels
+    private List<LoginResponseMessage.WorldWithChannels> getWorldsAndChannelsFromWorldServers() {
+        List<WorldInfo> worldServers = getAvailableWorldServers();
+
+        if (worldServers.isEmpty()) {
+            logger.error("No world servers available.");
+            return new ArrayList<>();
+        }
+
+        List<LoginResponseMessage.WorldWithChannels> worldsWithChannels = new ArrayList<>();
+        for (WorldInfo world : worldServers) {
+            List<ChannelInfo> channels = communicateWithWorldServer(world).join();
+            if (channels != null && !channels.isEmpty()) {
+                logger.info("Channels found for world {}", world.getWorldName());
+                worldsWithChannels.add(new LoginResponseMessage.WorldWithChannels(world.getWorldName(), channels));
+            } else {
+                logger.warn("No channels available for world: {}", world.getWorldName());
+            }
+        }
+        return worldsWithChannels;
+    }
+
+    // Retrieve the available world servers from the database
     private List<WorldInfo> getAvailableWorldServers() {
-        try (Session session = sessionFactory.openSession()) {  // Use sessionFactory
+        try (Session session = sessionFactory.openSession()) {
             session.beginTransaction();
 
             // Query the world servers from the DB
             List<WorldInfo> worldServers = session.createQuery("FROM WorldInfo", WorldInfo.class).list();
+            if (worldServers.isEmpty()) {
+                logger.error("No world servers found in the database.");
+            } else {
+                logger.info("Found {} world servers in the database.", worldServers.size());
+            }
 
             session.getTransaction().commit();
             return worldServers;
         } catch (PersistenceException e) {
             logger.error("Error retrieving world servers from the database", e);
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
-    }
-
-
-    private List<ChannelInfo> getAvailableChannelsFromWorldServer() {
-        List<WorldInfo> worldServers = getAvailableWorldServers();
-
-        if (worldServers.isEmpty()) {
-            logger.error("No world servers available.");
-            return Collections.emptyList();
-        }
-
-        List<ChannelInfo> availableChannels = new ArrayList<>();
-        for (WorldInfo world : worldServers) {
-            ChannelInfo channel = communicateWithWorldServer(world).join();
-            if (channel != null) {
-                availableChannels.add(channel);
-            }
-        }
-        return availableChannels;
-    }
-
-    private boolean createPlayerOnWorldServer(String username, ChannelInfo selectedChannel) {
-        // Implement player creation logic
-        return false;
     }
 }
