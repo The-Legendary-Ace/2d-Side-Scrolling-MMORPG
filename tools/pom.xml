@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.jyberion.mmorpg</groupId>
+        <artifactId>MMORPG</artifactId>
+        <version>0.0.1-dev</version>
+    </parent>
+
+    <artifactId>tools</artifactId>
+    <packaging>jar</packaging>
+
+<dependencies>
+    <!-- Core LibGDX dependency -->
+    <dependency>
+        <groupId>com.badlogicgames.gdx</groupId>
+        <artifactId>gdx</artifactId>
+        <version>1.11.0</version> <!-- Use the appropriate version -->
+    </dependency>
+
+    <!-- LWJGL3 backend for desktop applications -->
+    <dependency>
+        <groupId>com.badlogicgames.gdx</groupId>
+        <artifactId>gdx-backend-lwjgl3</artifactId>
+        <version>1.11.0</version>
+    </dependency>
+
+    <!-- Native libraries for desktop (Windows, macOS, Linux) -->
+    <dependency>
+        <groupId>com.badlogicgames.gdx</groupId>
+        <artifactId>gdx-platform</artifactId>
+        <version>1.11.0</version>
+        <classifier>natives-desktop</classifier>
+    </dependency>
+</dependencies>
+
+</project>
+
+

@@ -17,57 +17,67 @@ com.badlogic.gdx.graphics.g2d.BitmapFont: {
   }
 }
 com.badlogic.gdx.graphics.Color: {
-  black: {
-    r: 0
-    g: 0
-    b: 0
-    a: 1
-  }
-  disabled: {
-    r: 0.23137255
-    g: 0.24705882
-    b: 0.25882354
-    a: 1
-  }
-  highlight: {
-    r: 0.19215687
-    g: 0.6627451
-    b: 0.95686275
-    a: 1
-  }
-  message: {
-    r: 0.44313726
-    g: 0.47843137
-    b: 0.5372549
-    a: 1
-  }
-  split: {
-    r: 0.44313726
-    g: 0.47843137
-    b: 0.5372549
-    a: 1
-  }
-  white: {
-    r: 1
-    g: 1
-    b: 1
-    a: 1
+    black: { r: 0, g: 0, b: 0, a: 1 },
+    white: { r: 1, g: 1, b: 1, a: 1 },
+    gray: { r: 0.5, g: 0.5, b: 0.5, a: 1 },
+    disabled: { r: 0.23137255, g: 0.24705882, b: 0.25882354, a: 1 },
+    highlight: { r: 0.19215687, g: 0.6627451, b: 0.95686275, a: 1 },
+    message: { r: 0.44313726, g: 0.47843137, b: 0.5372549, a: 1 },
+    split: { r: 0.44313726, g: 0.47843137, b: 0.5372549, a: 1 },
+    up: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
+    over: { r: 0.3, g: 0.3, b: 0.3, a: 1 },
+    down: { r: 0.3, g: 0, b: 0, a: 1 },
+    checked: { r: 0.3, g: 0, b: 0, a: 1 },
+    checkedOver: { r: 0.4, g: 0, b: 0, a: 1 },
+    background: { r: 0.2, g: 0.2, b: 0.2, a: 1 },
+    selection: { r: 0.3, g: 0, b: 0, a: 1 },
+    semiTransparent: { r: 0, g: 0, b: 0, a: 0.6 },
+    font: { r: 1, g: 1, b: 1, a: 1 },
+    fontOver: { r: 1, g: 1, b: 1, a: 1 },
+    fontDown: { r: 0.5, g: 0.5, b: 0.5, a: 1 },
+    fontChecked: { r: 1, g: 1, b: 1, a: 1 },
+    fontCheckedOver: { r: 1, g: 1, b: 1, a: 1 },
+    fontDisabled: { r: 0.5, g: 0.5, b: 0.5, a: 1 },
+    progressBarBackgroundColor: { r: 0.2, g: 0.2, b: 0.2, a: 1 },
+    progressBarKnobColor: { r: 0.8, g: 0.8, b: 0.8, a: 1 }
+}
+
+{
+  "com.badlogic.gdx.scenes.scene2d.ui.ProgressBar$ProgressBarStyle": {
+    "default-horizontal": {
+      "background": "progress-bar-background",
+      "knobBefore": "progress-bar-knob"
+    }
   }
 }
+
 com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable: {
-  split: {
-    name: white
-    color: split
-  }
-  black: {
-    name: white
-    color: black
-  }
-  highlight: {
-    name: white
-    color: highlight
-  }
+    progressBarBackground: {
+        name: white,
+        color: progressBarBackgroundColor
+    },
+    progressBarKnobBefore: {
+        name: white,
+        color: progressBarKnobColor
+    },
+    progressBarKnob: {
+        name: white,
+        color: progressBarKnobColor
+    },
+    progressBarBackgroundVertical: {
+        name: white,
+        color: progressBarBackgroundColor
+    },
+    progressBarKnobBeforeVertical: {
+        name: white,
+        color: progressBarKnobColor
+    },
+    progressBarKnobVertical: {
+        name: white,
+        color: progressBarKnobColor
+    }
 }
+
 com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable: {
   progress-bar-knob-t: {
     region: progress-bar-knob

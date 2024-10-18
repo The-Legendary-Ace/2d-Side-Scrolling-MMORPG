@@ -1,0 +1,24 @@
+{
+  "background": {
+    "image": "textures/login_background.png",
+    "width": 800,
+    "height": 600,
+    "x": 0,
+    "y": 0
+  },
+  "button": {
+    "imageUp": "textures/login_button_up.png",
+    "imageDown": "textures/login_button_down.png",
+    "width": 200,
+    "height": 50,
+    "x": 300,
+    "y": 400
+  },
+  "textfield": {
+    "background": "textures/textfield_bg.png",
+    "width": 300,
+    "height": 40,
+    "x": 250,
+    "y": 300
+  }
+}

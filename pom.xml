@@ -12,6 +12,7 @@
         <module>api-server</module>
         <module>cash-shop-server</module>
         <module>common</module>
+		<module>tools</module>
     </modules>
     <properties>
         <java.version>17</java.version>

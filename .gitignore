@@ -34,3 +34,4 @@ replay_pid*
 *.key
 /game-client/target/
 /core-server/target/
+/tools/target/
